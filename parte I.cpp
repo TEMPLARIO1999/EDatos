@@ -5,23 +5,15 @@ using namespace std;
 // Esta clase nos permite condensar la memoria y tiempo consumidos
 // con cada ordenación.
 class Benchmark {
-	private:
+	public:
 		// Variables de tiempo y memoria.
 		int time, time_mcaso, time_pcaso;
 		float memory, memory_mcaso, memory_pcaso;
-	public:
 		// Constructor, declaramos todo en 0 para poder sumar.
 		Benchmark(){
 			time=memory=memory_mcaso=memory_pcaso=time_mcaso=time_pcaso=0;
 		}
 		~Benchmark(){}
-		// Getters para las variables privadas.
-		int get_time(){
-			return time;
-		}
-		int get_memory(){
-			return memory;
-		}
 		// Sobrecargamos los operadores para sumar tiempo y memoria.
 		void operator +(int time){
 			this->time+=time;
