@@ -1,6 +1,5 @@
 #include "graficos.h"
-
-SDL_Event event;
+#include <time.h>
 
 class Gema{
 	public:
@@ -37,6 +36,15 @@ class Tablero{
 				for(int j=0;j<8;j++){
 					tab[i][j]=Gema();
 				}
+			}
+		}
+		void imprimir_gemas(){
+			int posx = 60, posy = 120;
+			for(int i=0; i<8; i++, posy+=60){
+				for(int j=0; j<8; j++, posx+=60){
+					apply_surface(posx, posy, gemas[tab[i][j].color-1][tab[i][j].tipo-1], screen);
+				}
+				posx=60;
 			}
 		}
 		bool B_trio(int dir,int y,int x){    //Direccion 0=Horizontal 1=vertical busca trios
@@ -88,6 +96,29 @@ class Tablero{
 						}
 					}
 				}
+			}
+		}
+		// Se moverán las gemas de acuerdo al movimiento del usuario.
+		// Por ello se necesita el sentido y la casilla que se movió.
+		// Siempre se llama en casos dentro del tablero, por ello posx y posy no necesitan comprobarse.
+		void movimiento_gemas(int sentido, int posx, int posy){
+			Gema aux = tab[posy][posx];
+			// Arriba
+			if(sentido == 1 and posy > 0){
+				tab[posy][posx] = tab[posy-1][posx];
+				tab[posy-1][posx] = aux;
+			}
+			if(sentido == 2 and posx < 7){
+				tab[posy][posx] = tab[posy][posx+1];
+				tab[posy][posx+1] = aux;
+			}
+			if(sentido == 3 and posy < 7){
+				tab[posy][posx] = tab[posy+1][posx];
+				tab[posy+1][posx] = aux;
+			}
+			if(sentido == 4 and posx > 0 ){
+				tab[posy][posx] = tab[posy][posx-1];
+				tab[posy][posx-1] = aux;
 			}
 		}
 		bool Comb(int cont,int y,int x,int dir){			//Busca casillas adyacentes 
@@ -251,18 +282,102 @@ class menu {
 		}
 };
 
-void juego(){
-	while(1){
-		apply_surface(400,150,cuadricula,mundo);
-		apply_surface(0,0,mundo,screen);
-		SDL_Flip(screen);
-		if( SDL_PollEvent( &event )){
-			
+class EventManager{
+	private:
+		// x, y coordenadas normales en px.
+		// x_ant, y_ant coordenadas donde iniciará el arrastre del mouse.
+		int x, y, x_ant, y_ant;
+	public:
+		// x_vec, y_vec representación de x y para la gema de la matriz seleccionada.
+		// publicas para evitar la fatiga siempre que se da click. xD
+		int x_vec, y_vec;
+		// Se hace en forma de clase para no tener que declarar muchos eventos.
+		SDL_Event event;
+		EventManager(){}
+		~EventManager(){}
+		// Identificamos donde está el ratón para aplicar un destello de fondo
+		// y saber que gema estamos resaltando.
+		void mouse_motion_ev(){
+			x = (event.motion.x-60)/60;
+			y = (event.motion.y-120)/60;
+			if (x <= 7 and y <= 7 and x >= 0 and y >= 0) apply_surface((x*60)+60, (y*60)+120, destello, screen);
 		}
+		// Identificamos la casilla del tablero, y sus coordenadas x y.
+		void mouse_click_ev(){
+			x_vec = (event.motion.x-60)/60;
+			y_vec = (event.motion.y-120)/60;
+			x_ant = event.motion.x;
+			y_ant = event.motion.y;
+		}
+		// Cuando se libera el mouse, calculamos la trayectoria y si fue
+		// un movimiento válido.
+		int mouse_upclick_ev(){
+			int mov = 0;
+			// Si el movimiento es en y, el absoluto de x tiene que ser menor de 40.
+			// Lo mismo para x.
+			int x_cur = abs(event.motion.x - x_ant);
+			int y_cur = abs(event.motion.y - y_ant);
+			if (x_vec <= 7 and y_vec <= 7 and x_vec >= 0 and y_vec >= 0){
+				// Movimiento arriba (1) o abajo (3).
+				if(x_cur <= 25){
+					mov = (event.motion.y - y_ant) <= -50 ? 1 : (event.motion.y - y_ant) >= 50 ? 3: 0;
+				}
+				// Movimiento izquierda (4) o derecha (2).
+				else if (y_cur <= 25){
+					mov = (event.motion.x - x_ant) >= 50 ? 2 : (event.motion.x - x_ant) <= -50 ? 4 : 0;
+				}
+			}
+			return mov;
+		}
+		
+};
+
+void juego(){
+	// movimiento, cuando se da click identificamos hacia donde se mueve
+	// 1 arriba, 2 derecha, 3 abajo, 4 izquierda. Sentido del reloj.
+	int mov;
+	// Objeto que nos permitirá el manejo de eventos a lo largo del juego.
+	EventManager manager;
+	// Inicializamos el tablero.
+	Tablero tablero("FuckedUp");
+	// Eliminamos cualquier combinación mayor a 3 o especial antes de iniciar.
+	tablero.Check_Est();
+	tablero.Chek_Comb();
+	tablero.Re_Fill();
+	apply_surface(0, 0, mundo, screen);
+	while(1){
+		// Siempre se va a sobre escribir el tablero a la espera de nuevas instrucciones.
+		if( SDL_PollEvent( &manager.event )){
+			apply_surface(60, 120, tablero_img, screen);
+			// Si el mouse se mueve, mouse_motion_ev se encarga del movimiento.
+			if( manager.event.type == SDL_MOUSEMOTION ) {
+				manager.mouse_motion_ev();
+			}
+			// Si el mouse da click, mouse_click_ev se encarga del evento.
+			if( manager.event.type == SDL_MOUSEBUTTONDOWN ) {
+				if( manager.event.button.button == SDL_BUTTON_LEFT ) {
+					manager.mouse_click_ev(); // Se identifica el movimiento de arrastre.
+				}
+			}
+			if( manager.event.type == SDL_MOUSEBUTTONUP ) {
+				mov = manager.mouse_upclick_ev(); // Se calcula la dirección del arrastre para movimiento de gemas.
+				if(mov){
+					// Casos para el movimiento, 1 arriba, 2 dcha, 3 abajo, 4 izqda
+					tablero.movimiento_gemas(mov, manager.x_vec, manager.y_vec);
+				}
+			}
+			// Se imprimen las gemas, para cualquier movimiento que haya ocurrido.
+			tablero.imprimir_gemas();
+			tablero.Check_Est();
+			tablero.Chek_Comb();
+			tablero.Re_Fill();
+		}
+		SDL_Flip(screen);
 	}
 }
 
 int main(int argc, char **argv){
+	srand(time(NULL));
 	init();
 	load_files();
 	menu m;
