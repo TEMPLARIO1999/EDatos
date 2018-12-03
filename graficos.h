@@ -13,8 +13,11 @@ SDL_Surface *m0 = NULL;
 SDL_Surface *m1 = NULL;
 SDL_Surface *m2 = NULL;
 SDL_Surface *m3 = NULL;
-SDL_Surface *mundo=NULL;
-SDL_Surface *cuadricula=NULL;
+SDL_Surface *mundo = NULL;
+SDL_Surface *destello = NULL;
+SDL_Surface *tablero_img = NULL;
+vector <vector<SDL_Surface *>> gemas;
+SDL_Surface *message = NULL;
 TTF_Font *font = NULL;
 TTF_Font *font_big = NULL;
 SDL_Color white = {255, 255, 255};
@@ -34,14 +37,29 @@ SDL_Surface *load_image( std::string filename ) {
 }
 
 bool load_files() {
-	m0 = load_image( "menu_0.bmp" );
-	m1 = load_image( "menu_1.bmp" );
-	m2 = load_image( "menu_2.bmp" );
-	m3 = load_image( "menu_3.bmp" );
-	mundo=load_image("mundo1.jpg");
-	cuadricula=load_image("cuadricula.png");
+	SDL_Surface *aux = NULL;
+	vector <SDL_Surface *> vec_aux;
+	string gema_nombre;
+	m0 = load_image( "menu/menu_0.bmp" );
+	m1 = load_image( "menu/menu_1.bmp" );
+	m2 = load_image( "menu/menu_2.bmp" );
+	m3 = load_image( "menu/menu_3.bmp" );
+	mundo = load_image( "mundos/world.jpg" );
+	tablero_img = load_image( "mundos/tablero.png" );
+	destello = load_image( "gemas/destello.png" );
 	font = TTF_OpenFont( "fuente.ttf", 20);
 	font_big = TTF_OpenFont( "fuente.ttf", 48);
+	for(int i=1; i<8; i++){
+		for(int j=1; j<5; j++){
+			gema_nombre = "gemas/gema_"+to_string(i)+"_t"+to_string(j)+".png";
+			aux = load_image( gema_nombre );
+			if(aux==NULL)
+				SDL_Quit();
+			vec_aux.push_back(aux);
+		}
+		gemas.push_back(vec_aux);
+		vec_aux.clear();
+	}
 	return true;
 }
 
