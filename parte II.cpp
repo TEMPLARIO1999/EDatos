@@ -21,6 +21,9 @@ class Jugador{
 			nivel=1;
 			puntuacion=0;
 		}
+		int GetPuntuacion(){
+			return puntuacion;
+		}
 };
 
 class Tablero{
@@ -37,6 +40,11 @@ class Tablero{
 					tab[i][j]=Gema();
 				}
 			}
+			while(Check_Est() || Chek_Comb()){
+				Re_Fill();
+				for(int i=0;i<8;i++) for(int j=0;j<8;j++) if(tab[i][j].tipo!=1) tab[i][j]=Gema();
+			}
+			Player->puntuacion=0;
 		}
 		void imprimir_gemas(){
 			int posx = 60, posy = 120;
@@ -52,6 +60,7 @@ class Tablero{
 				if(y-2>=0 && x>=0 && x<=7){
 					if(tab[y][x].color!=0 && tab[y][x].color==tab[y-1][x].color && tab[y-1][x].color==tab[y-2][x].color){
 						vx=x; vy=y;
+						powers(tab[y-1][x],y-1,x); powers(tab[y-2][x],y-2,x);
 						tab[y-1][x].color=0; tab[y-2][x].color=0;
 						return true;
 					}else return false;
@@ -60,66 +69,54 @@ class Tablero{
 				if(y+2<=7 && x<=7 && x>=0){
 					if(tab[y][x].color!=0 && tab[y][x].color==tab[y+1][x].color && tab[y+1][x].color==tab[y+2][x].color){
 						vx=x; vy=y;
+						powers(tab[y+1][x],y+1,x); powers(tab[y+2][x],y+2,x);
 						tab[y+1][x].color=0; tab[y+2][x].color=0;
 						return true;
 					}else return false;
 				}else return false;
 			}
 		}
-		void Check_Est(){					//Comprueba si hay combinaciones estelares
+		bool Check_Est(){					//Comprueba si hay combinaciones estelares
 			for(int i=0;i<8;i++){
 				for(int j=0;j<8;j++){
 					if(tab[i][j].color!=0 && tab[i][j].color==tab[i][j+1].color && tab[i][j+1].color==tab[i][j+2].color){
 						if(j+2<=7) 
 						if(B_trio(0,i,j) || B_trio(1,i,j) || B_trio(0,i,j+1) || B_trio(1,i,j+1) || B_trio(0,i,j+2) || B_trio(1,i,j+2)){
 							int aux=tab[vy][vx].color;
+							Player->puntuacion+=300;
+							powers(tab[i][j+1],i,j+1); powers(tab[i][j+2],i,j+2); powers(tab[i][j],i,j);
 							tab[i][j+1].color=0; tab[i][j+2].color=0; tab[i][j].color=0;
 							tab[vy][vx].color=aux;
 							tab[vy][vx].tipo=2;
+							return true;
 						}
 					}
 					else if(tab[i][j].color!=0 && tab[i][j].color==tab[i+1][j].color && tab[i+1][j].color==tab[i+2][j].color){
 						if(i+2<=7){
 							if(tab[i+1][j].color!=0 && tab[i+1][j].color==tab[i+1][j+1].color && tab[i+1][j+1].color==tab[i+1][j+2].color){
 								if(j+2<=7){
+									Player->puntuacion+=300;
+									powers(tab[i][j],i,j); powers(tab[i+2][j],i+2,j); powers(tab[i+1][j+1],i+1,j+1); powers(tab[i+1][j+2],i+1,j+2);
 									tab[i+1][j].tipo=2;
 									tab[i][j].color=0; tab[i+2][j].color=0;
 									tab[i+1][j+1].color=0; tab[i+1][j+2].color=0;
+									return true;
 								}
 							}else if(tab[i+1][j].color!=0 && tab[i+1][j].color==tab[i+1][j-1].color && tab[i+1][j-1].color==tab[i+1][j-2].color){
 								if(j-2>=0){
+									Player->puntuacion+=300;
+									powers(tab[i][j],i,j); powers(tab[i+2][j],i+2,j); powers(tab[i+1][j-1],i+1,j-1); powers(tab[i+1][j-2],i+1,j-2);
 									tab[i+1][j].tipo=2;
 									tab[i][j].color=0; tab[i+2][j].color=0;
 									tab[i+1][j-1].color=0; tab[i+1][j-2].color=0;
+									return true;
 								}
 							}
 						}
 					}
 				}
 			}
-		}
-		// Se moverán las gemas de acuerdo al movimiento del usuario.
-		// Por ello se necesita el sentido y la casilla que se movió.
-		// Siempre se llama en casos dentro del tablero, por ello posx y posy no necesitan comprobarse.
-		void movimiento_gemas(int sentido, int posx, int posy){
-			Gema aux = tab[posy][posx];
-			// Arriba
-			if(sentido == 1 and posy > 0){
-				tab[posy][posx] = tab[posy-1][posx];
-				tab[posy-1][posx] = aux;
-			}
-			if(sentido == 2 and posx < 7){
-				tab[posy][posx] = tab[posy][posx+1];
-				tab[posy][posx+1] = aux;
-			}
-			if(sentido == 3 and posy < 7){
-				tab[posy][posx] = tab[posy+1][posx];
-				tab[posy+1][posx] = aux;
-			}
-			if(sentido == 4 and posx > 0 ){
-				tab[posy][posx] = tab[posy][posx-1];
-				tab[posy][posx-1] = aux;
-			}
+			return false;
 		}
 		bool Comb(int cont,int y,int x,int dir){			//Busca casillas adyacentes 
 			if(dir){
@@ -127,12 +124,16 @@ class Tablero{
 				else{
 					if(cont>=3) {
 						vx=cont;
+						powers(tab[y][x],y,x);
 						tab[y][x].color=0;
+						Player->puntuacion+=50;
 						return true;
 					}else return false;
 				}
 				if(vx>=3) {
+					powers(tab[y][x],y,x);
 					tab[y][x].color=0;
+						Player->puntuacion+=50;
 					return true;
 				}return false;
 			}else{
@@ -140,53 +141,70 @@ class Tablero{
 				else{
 					if(cont>=3) {
 						vx=cont;
+						powers(tab[y][x],y,x);
 						tab[y][x].color=0;
+						Player->puntuacion+=50;
 						return true;
 					}else return false;
 				}
 				if(vx>=3){
+					powers(tab[y][x],y,x);
 					tab[y][x].color=0;
+					Player->puntuacion+=50;
 					return true;
 				}return false;
 			}
-		
 		}
-		void Chek_Comb(){   //Comprueba si hay combinaciones de 3 4 o 5 gemas :3
+		bool Chek_Comb(){   //Comprueba si hay combinaciones de 3 4 o 5 gemas :3
 			for(int i=0;i<8;i++){
 				for(int j=0;j<8;j++){
 					vx=0; vy=tab[i][j].color;
 					if(Comb(1,i,j,1)){
-						if(vx==3) tab[i][j].color=0;
-						else if(vx==4) tab[i][j].tipo=3;
+						if(vx==3){
+							powers(tab[i][j],i,j);
+							tab[i][j].color=0;
+							Player->puntuacion+=50;
+						}else if(vx==4) tab[i][j].tipo=3;
 						else if(vx>=5) tab[i][j].tipo=4;
 						if(vx>3) tab[i][j].color=vy;
+						return true;
 					}else if(Comb(1,i,j,0)){
-						if(vx==3) tab[i][j].color=0;
-						else if(vx==4) tab[i][j].tipo=3;
+						if(vx==3){
+							powers(tab[i][j],i,j);
+							tab[i][j].color=0;
+							Player->puntuacion+=50;
+						}else if(vx==4) tab[i][j].tipo=3;
 						else if(vx>=5) tab[i][j].tipo=4; 
 						if(vx>3) tab[i][j].color=vy;
+						return true;
 					}
 				}
 			}
+			return false;
 		}
 		void powers(Gema gem,int y,int x){
 			if(gem.tipo==1) return;
 			else if(gem.tipo==2){
 				tab[y][x].color=0;
+				Player->puntuacion+=100;
 				for(int i=0;i<8;i++) {
 					if(tab[i][x].tipo!=gem.tipo && tab[i][x].color!=gem.color){
 						tab[i][x].color=0;
+						Player->puntuacion+=50;
 						powers(tab[i][x],i,x);
 					}
 				}
 				for(int j=0;j<8;j++){
 					if(tab[y][j].tipo!=gem.tipo && tab[y][j].color!=gem.color){
 						tab[y][j].color=0;
+						Player->puntuacion+=50;
 						powers(tab[y][j],y,j);
 					}
 				}
 			}else if(gem.tipo==3){
 				tab[y][x].color=0;
+				Player->puntuacion+=150;
+				Player->puntuacion+=400;
 				powers(tab[y-1][x-1],y-1,x-1); tab[y-1][x-1].color=0; 
 				powers(tab[y-1][x],y-1,x); tab[y-1][x].color=0;
 				powers(tab[y-1][x+1],y-1,x+1); tab[y-1][x+1].color=0;
@@ -196,12 +214,15 @@ class Tablero{
 				powers(tab[y+1][x],y+1,x); tab[y+1][x].color=0;
 				powers(tab[y+1][x+1],y+1,x+1); tab[y+1][x+1].color=0;
 			}else if(gem.tipo==4){
-				vx=tab[y][x].color;tab[y][x].color=0;
+				vx=tab[y][x].color;
+				Player->puntuacion+=200;
+				tab[y][x].color=0;
 				for (int i=0;i<8;i++){
 					for(int j=0;j<8;j++){
 						if(tab[i][j].color==vx){
 							powers(tab[i][j],i,j);
 							tab[i][j].color=0;
+							Player->puntuacion+=50;
 						}
 					}
 				}
@@ -223,6 +244,56 @@ class Tablero{
 			}
 			for(int i=7;i>=0;i--) for(int j=0;j<8;j++) if(tab[i][j].color==0) tab[i][j]=Gema();
 		}
+		// Se moverán las gemas de acuerdo al movimiento del usuario.
+		// Por ello se necesita el sentido y la casilla que se movió.
+		// Siempre se llama en casos dentro del tablero, por ello posx y posy no necesitan comprobarse.
+		void movimiento_gemas(int sentido, int posx, int posy){
+			if(tab[posy][posx].tipo==4){
+				if(sentido == 1 and posy > 0) tab[posy][posx].color=tab[posy-1][posx].color;
+				if(sentido == 2 and posx < 7) tab[posy][posx].color=tab[posy][posx+1].color;
+				if(sentido == 3 and posy < 7) tab[posy][posx].color=tab[posy+1][posx].color;
+				if(sentido == 4 and posx > 0) tab[posy][posx].color=tab[posy][posx-1].color; 
+				powers(tab[posy][posx],posy,posx);
+			}else{
+				Gema aux = tab[posy][posx];
+				// Arriba
+				if(sentido == 1 and posy > 0){
+					tab[posy][posx] = tab[posy-1][posx];
+					tab[posy-1][posx] = aux;
+				}
+				if(sentido == 2 and posx < 7){
+					tab[posy][posx] = tab[posy][posx+1];
+					tab[posy][posx+1] = aux;
+				}
+				if(sentido == 3 and posy < 7){
+					tab[posy][posx] = tab[posy+1][posx];
+					tab[posy+1][posx] = aux;
+				}
+				if(sentido == 4 and posx > 0 ){
+					tab[posy][posx] = tab[posy][posx-1];
+					tab[posy][posx-1] = aux;
+				}
+				if(!Check_Est() && !Chek_Comb()){
+					Gema aux = tab[posy][posx];
+					if(sentido == 1 and posy > 0){
+						tab[posy][posx] = tab[posy-1][posx];
+						tab[posy-1][posx] = aux;
+					}
+					if(sentido == 2 and posx < 7){
+						tab[posy][posx] = tab[posy][posx+1];
+						tab[posy][posx+1] = aux;
+					}
+					if(sentido == 3 and posy < 7){
+						tab[posy][posx] = tab[posy+1][posx];
+						tab[posy+1][posx] = aux;
+					}
+					if(sentido == 4 and posx > 0 ){
+						tab[posy][posx] = tab[posy][posx-1];
+						tab[posy][posx-1] = aux;
+					}
+				}
+			}
+		}
 		void show(){
 			for(int i=0;i<8;i++){
 				for(int j=0;j<8;j++){
@@ -231,6 +302,7 @@ class Tablero{
 				cout<<endl;
 			}
 		}
+		friend void juego();
 };
 
 class menu {
@@ -367,10 +439,10 @@ void juego(){
 				}
 			}
 			// Se imprimen las gemas, para cualquier movimiento que haya ocurrido.
+			tablero.Re_Fill();
 			tablero.imprimir_gemas();
 			tablero.Check_Est();
 			tablero.Chek_Comb();
-			tablero.Re_Fill();
 		}
 		SDL_Flip(screen);
 	}

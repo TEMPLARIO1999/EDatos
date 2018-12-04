@@ -16,6 +16,7 @@ SDL_Surface *m3 = NULL;
 SDL_Surface *mundo = NULL;
 SDL_Surface *destello = NULL;
 SDL_Surface *tablero_img = NULL;
+SDL_Surface *puntos = NULL;
 vector <vector<SDL_Surface *>> gemas;
 SDL_Surface *message = NULL;
 TTF_Font *font = NULL;
