@@ -13,10 +13,10 @@ class Gema{
 
 class Jugador{
 	public:
-		char *alias;
+		string alias;
 		int nivel;
 		int puntuacion;
-		Jugador(char *alias){
+		Jugador(string alias){
 			this->alias=alias;
 			nivel=1;
 			puntuacion=0;
@@ -28,11 +28,12 @@ class Jugador{
 
 class Tablero{
 	private:
-		Jugador *Player;
 		Gema tab[8][8];
 		int vx,vy;
+	protected:
+		Jugador *Player;
 	public:
-		Tablero(char *alias){
+		Tablero(string alias){
 			vx=0; vy=0;
 			Player = new Jugador(alias);
 			for(int i=0;i<8;i++){
@@ -48,12 +49,23 @@ class Tablero{
 		}
 		void imprimir_gemas(){
 			int posx = 60, posy = 120;
+			string auxiliar;
 			for(int i=0; i<8; i++, posy+=60){
 				for(int j=0; j<8; j++, posx+=60){
 					apply_surface(posx, posy, gemas[tab[i][j].color-1][tab[i][j].tipo-1], screen);
 				}
 				posx=60;
 			}
+			apply_surface(0, 0, status, screen);
+			message = TTF_RenderText_Solid( status_font, this->Player->alias.c_str(), black );
+			apply_surface(930, 150, message, screen);
+			auxiliar = to_string(this->Player->nivel);
+			message = TTF_RenderText_Solid(status_font, auxiliar.c_str(), black);
+			apply_surface(945, 390, message, screen);
+			auxiliar = to_string(this->Player->puntuacion) + " / " + to_string((int)PUNTUACION_PARA_PASAR_DE_NIVEL);
+			message = TTF_RenderText_Solid(status_font, auxiliar.c_str(), black);
+			apply_surface(900, 565, message, screen);
+			imprimir_rectangulo(screen, black, this->Player->puntuacion);
 		}
 		bool B_trio(int dir,int y,int x){    //Direccion 0=Horizontal 1=vertical busca trios
 			if(dir==0){
@@ -248,6 +260,39 @@ class Tablero{
 		// Por ello se necesita el sentido y la casilla que se movió.
 		// Siempre se llama en casos dentro del tablero, por ello posx y posy no necesitan comprobarse.
 		void movimiento_gemas(int sentido, int posx, int posy){
+			// Tomamos las posiciones en píxeles de x y y para animar el intercambio.
+			int posx_px = (posx*60)+60, posy_px = (posy*60)+120;
+			// i dará el incremento o decremento de píxeles.
+			for(int i=1; i <= 60; i++){
+				// Aplicamos cuadro en blanco al tablero, para hacer movimiento limpio.
+				apply_surface(60, 120, tablero_img, screen);
+				this->imprimir_gemas();
+				apply_surface(posx_px, posy_px, pos_blanca, screen);
+				switch(sentido){
+					case 1:
+						apply_surface(posx_px, posy_px-60, pos_blanca, screen);
+						apply_surface(posx_px, posy_px-i, gemas[tab[posy][posx].color-1][tab[posy][posx].tipo-1], screen);
+						apply_surface(posx_px, posy_px-60+i, gemas[tab[posy-1][posx].color-1][tab[posy-1][posx].tipo-1], screen);
+						break;
+					case 2:
+						apply_surface(posx_px+60, posy_px, pos_blanca, screen);
+						apply_surface(posx_px+i, posy_px, gemas[tab[posy][posx].color-1][tab[posy][posx].tipo-1], screen);
+						apply_surface(posx_px+60-i, posy_px, gemas[tab[posy][posx+1].color-1][tab[posy][posx+1].tipo-1], screen);
+						break;
+					case 3:
+						apply_surface(posx_px, posy_px+60, pos_blanca, screen);
+						apply_surface(posx_px, posy_px+i, gemas[tab[posy][posx].color-1][tab[posy][posx].tipo-1], screen);
+						apply_surface(posx_px, posy_px+60-i, gemas[tab[posy+1][posx].color-1][tab[posy+1][posx].tipo-1], screen);
+						break;
+					case 4:
+						apply_surface(posx_px-60, posy_px, pos_blanca, screen);
+						apply_surface(posx_px-i, posy_px, gemas[tab[posy][posx].color-1][tab[posy][posx].tipo-1], screen);
+						apply_surface(posx_px-60+i, posy_px, gemas[tab[posy][posx-1].color-1][tab[posy][posx-1].tipo-1], screen);
+						break;
+				}
+				SDL_Flip(screen);
+				SDL_Delay(1);
+			}
 			if(tab[posy][posx].tipo==4){
 				if(sentido == 1 and posy > 0) tab[posy][posx].color=tab[posy-1][posx].color;
 				if(sentido == 2 and posx < 7) tab[posy][posx].color=tab[posy][posx+1].color;
@@ -292,6 +337,14 @@ class Tablero{
 						tab[posy][posx-1] = aux;
 					}
 				}
+			}
+			// Checamos si el usuario será cambiado de nivel.
+			this->check_lvl_change();
+		}
+		void check_lvl_change () {
+			if(this->Player->puntuacion > PUNTUACION_PARA_PASAR_DE_NIVEL){
+				++(this->Player->nivel);
+				PUNTUACION_PARA_PASAR_DE_NIVEL*=(AUMENTO_PUNTUACION+1);
 			}
 		}
 		void show(){
@@ -401,7 +454,40 @@ class EventManager{
 			}
 			return mov;
 		}
-		
+		// Esta función está a la espera de pulsaciones de tecla para mostrarlas en pantalla.
+		string handle_nickname_event() {
+			bool salir = false;
+			string aux, nc;
+			apply_surface(0, 0, nombre_jugador, screen);
+			SDL_Flip(screen);
+			// Mientras el usuario no presione Enter
+			while( 1 and !salir ) {
+				// Checamos un nuevo evento
+				if( SDL_PollEvent( &event ) ) {
+					// Si se pulsa una tecla
+					if( event.type == SDL_KEYDOWN ) {
+						// Obtenemos el código de la tecla
+						aux = string(SDL_GetKeyName(event.key.keysym.sym));
+						// Si la tecla presionada está en el abecedario
+						if(aux.length()==1 and ((aux[0]>=65 and aux[0]<=90) or (aux[0]>=95 and aux[0]<=122)) and nc.length()<15) {
+							// Concatenamos al nickname
+							nc += aux;
+						} else if (event.key.keysym.sym == SDLK_BACKSPACE) {
+							// Si presionamos backspace eliminamos el ultimo caracter. Si la cadena no está vacía
+							if(!nc.empty()) nc.erase(nc.end()-1);
+						} else if(event.key.keysym.sym == SDLK_RETURN) {
+							// Si presionamos enter regresamos la cadena.
+							if(!nc.empty()) return nc;
+						}
+						// Volvemos a dibujar, porque cuando se elimina podría sobreponerse.
+						apply_surface(0, 0, nombre_jugador, screen);
+						message = TTF_RenderText_Solid( font_big, nc.c_str(), white );
+						apply_surface(230, 306, message, screen);
+						SDL_Flip(screen);
+					}
+				}
+			}
+		}
 };
 
 void juego(){
@@ -410,8 +496,9 @@ void juego(){
 	int mov;
 	// Objeto que nos permitirá el manejo de eventos a lo largo del juego.
 	EventManager manager;
+	string nc = manager.handle_nickname_event();
 	// Inicializamos el tablero.
-	Tablero tablero("FuckedUp");
+	Tablero tablero(nc);
 	// Eliminamos cualquier combinación mayor a 3 o especial antes de iniciar.
 	tablero.Check_Est();
 	tablero.Chek_Comb();
