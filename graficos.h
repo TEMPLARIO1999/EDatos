@@ -16,7 +16,7 @@ SDL_Surface *m0 = NULL;
 SDL_Surface *m1 = NULL;
 SDL_Surface *m2 = NULL;
 SDL_Surface *m3 = NULL;
-SDL_Surface *mundo = NULL;
+vector <SDL_Surface *> mundos;
 SDL_Surface *destello = NULL;
 SDL_Surface *tablero_img = NULL;
 SDL_Surface *puntos = NULL;
@@ -53,7 +53,6 @@ bool load_files() {
 	m1 = load_image( "menu/menu_1.bmp" );
 	m2 = load_image( "menu/menu_2.bmp" );
 	m3 = load_image( "menu/menu_3.bmp" );
-	mundo = load_image( "mundos/world.jpg" );
 	nombre_jugador = load_image( "menu/nombre_jugador.png" );
 	tablero_img = load_image( "mundos/tablero.png" );
 	status = load_image( "mundos/status.png" );
@@ -72,6 +71,13 @@ bool load_files() {
 		}
 		gemas.push_back(vec_aux);
 		vec_aux.clear();
+	}
+	for(int i=1; i<=5; i++){
+		gema_nombre = "mundos/world-"+to_string(i)+".jpg";
+		aux = load_image( gema_nombre );
+		if(aux==NULL)
+			SDL_Quit();
+		mundos.push_back(aux);
 	}
 	return true;
 }

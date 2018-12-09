@@ -47,6 +47,9 @@ class Tablero{
 			}
 			Player->puntuacion=0;
 		}
+		int get_nv () {
+			return this->Player->nivel;
+		}
 		void imprimir_gemas(){
 			int posx = 60, posy = 120;
 			string auxiliar;
@@ -359,10 +362,19 @@ class Tablero{
 			}
 		}
 		void check_lvl_change () {
+			int id = (this->Player->nivel-1)%5;
+			SDL_Surface *ant = mundos[id];
+			SDL_Surface *sig = mundos[(id+1)%5];
 			if(this->Player->puntuacion > PUNTUACION_PARA_PASAR_DE_NIVEL){
 				++(this->Player->nivel);
 				PUNTUACION_PARA_PASAR_DE_NIVEL*=(AUMENTO_PUNTUACION+1);
 				this->Change_Tab();
+				for(int i=1, j=-1280; i<=1280; i+=5, j+=5){
+					apply_surface(i, 0, ant, screen);
+					apply_surface(j, 0, sig, screen);
+					this->imprimir_gemas();
+					SDL_Flip(screen);
+				}
 			}
 		}
 		void show(){
@@ -560,10 +572,10 @@ void juego(){
 	tablero.Check_Est();
 	tablero.Chek_Comb();
 	tablero.Re_Fill();
-	apply_surface(0, 0, mundo, screen);
 	while(tablero.GameOver()){
 		// Siempre se va a sobre escribir el tablero a la espera de nuevas instrucciones.
 		if( SDL_PollEvent( &manager.event )){
+			apply_surface(0, 0, mundos[(tablero.get_nv()-1)%5], screen);
 			apply_surface(60, 120, tablero_img, screen);
 			// Si el mouse se mueve, mouse_motion_ev se encarga del movimiento.
 			if( manager.event.type == SDL_MOUSEMOTION ) {
