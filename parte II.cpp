@@ -217,14 +217,23 @@ class Tablero{
 				tab[y][x].color=0;
 				Player->puntuacion+=150;
 				Player->puntuacion+=400;
-				powers(tab[y-1][x-1],y-1,x-1); tab[y-1][x-1].color=0; 
-				powers(tab[y-1][x],y-1,x); tab[y-1][x].color=0;
-				powers(tab[y-1][x+1],y-1,x+1); tab[y-1][x+1].color=0;
-				powers(tab[y][x-1],y,x-1); tab[y][x-1].color=0;
-				powers(tab[y][x+1],y,x+1); tab[y][x+1].color=0;
-				powers(tab[y+1][x-1],y+1,x-1); tab[y+1][x-1].color=0;
-				powers(tab[y+1][x],y+1,x); tab[y+1][x].color=0;
-				powers(tab[y+1][x+1],y+1,x+1); tab[y+1][x+1].color=0;
+				if(y-1>=0 && x-1>=0) {
+					powers(tab[y-1][x-1],y-1,x-1); tab[y-1][x-1].color=0;
+				} if(y-1>=0){
+					powers(tab[y-1][x],y-1,x); tab[y-1][x].color=0;
+				} if(y-1>=0 && x+1<8){
+					powers(tab[y-1][x+1],y-1,x+1); tab[y-1][x+1].color=0;
+				} if(x-1>=0) {
+					powers(tab[y][x-1],y,x-1); tab[y][x-1].color=0;
+				} if(x+1<8) {
+					powers(tab[y][x+1],y,x+1); tab[y][x+1].color=0;
+				} if(y+1<8 && x-1>=0){
+					powers(tab[y+1][x-1],y+1,x-1); tab[y+1][x-1].color=0;
+				} if(y+1<8){
+					powers(tab[y+1][x],y+1,x); tab[y+1][x].color=0;
+				} if(y+1<8 && x+1<8){
+					powers(tab[y+1][x+1],y+1,x+1); tab[y+1][x+1].color=0;	
+				}
 			}else if(gem.tipo==4){
 				vx=tab[y][x].color;
 				Player->puntuacion+=200;
@@ -341,10 +350,18 @@ class Tablero{
 			// Checamos si el usuario será cambiado de nivel.
 			this->check_lvl_change();
 		}
+		void Change_Tab(){
+			for(int i=0;i<8;i++){
+				for(int j=0;j<8;j++){
+					if(tab[i][j].tipo==1) tab[i][j]=Gema();
+				}
+			}
+		}
 		void check_lvl_change () {
 			if(this->Player->puntuacion > PUNTUACION_PARA_PASAR_DE_NIVEL){
 				++(this->Player->nivel);
 				PUNTUACION_PARA_PASAR_DE_NIVEL*=(AUMENTO_PUNTUACION+1);
+				this->Change_Tab();
 			}
 		}
 		void show(){
@@ -354,6 +371,45 @@ class Tablero{
 				}
 				cout<<endl;
 			}
+		}
+		bool GameOver(){
+			for(int i=0;i<8;i++){
+				for (int j=0;j<8;j++){
+					if(j+3<8){
+						if(tab[i][j].color==tab[i][j+1].color && tab[i][j+1].color==tab[i][j+3].color) return true;
+						if(tab[i][j].color==tab[i][j+2].color && tab[i][j+2].color==tab[i][j+3].color) return true;
+					}
+					if(j+2<8){
+						if(i-1>=0) {
+							if(tab[i][j].color==tab[i][j+1].color && tab[i][j+1].color==tab[i-1][j+2].color) return true;
+							if(tab[i][j].color==tab[i+1][j+1].color && tab[i+1][j+1].color==tab[i+1][j+2].color) return true;
+							if(tab[i][j].color==tab[i-1][j+1].color && tab[i-1][j+1].color==tab[i][j+2].color) return true;
+						}
+						if(i+1<8) {
+							if(tab[i][j].color==tab[i][j+1].color && tab[i][j+1].color==tab[i+1][j+2].color) return true;
+							if(tab[i][j].color==tab[i-1][j+1].color && tab[i-1][j+1].color==tab[i-1][j+2].color) return true;
+							if(tab[i][j].color==tab[i+1][j+1].color && tab[i+1][j+1].color==tab[i][j+2].color) return true;
+						}
+					}
+					if(i+3<8){
+						if(tab[i][j].color==tab[i+1][j].color && tab[i+1][j].color==tab[i+3][j].color) return true;
+						if(tab[i][j].color==tab[i+2][j].color && tab[i+2][j].color==tab[i+3][j].color) return true;
+					}
+					if(i+2<8){
+						if(j-1>=0) {
+							if(tab[i][j].color==tab[i+1][j-1].color && tab[i+1][j-1].color==tab[i+2][j-1].color) return true;
+							if(tab[i][j].color==tab[i+1][j].color && tab[i+1][j].color==tab[i+2][j-1].color) return true;
+							if(tab[i][j].color==tab[i+1][j-1].color && tab[i+1][j-1].color==tab[i+2][j].color) return true;
+						}
+						if(j+1<8) {
+							if(tab[i][j].color==tab[i+1][j+1].color && tab[i+1][j+1].color==tab[i+2][j+1].color) return true;
+							if(tab[i][j].color==tab[i+1][j].color && tab[i+1][j].color==tab[i+2][j+1].color) return true;
+							if(tab[i][j].color==tab[i+1][j+1].color && tab[i+1][j+1].color==tab[i+2][j].color) return true;
+						}
+					}
+				}
+			}
+			return false;
 		}
 		friend void juego();
 };
@@ -504,7 +560,7 @@ void juego(){
 	tablero.Chek_Comb();
 	tablero.Re_Fill();
 	apply_surface(0, 0, mundo, screen);
-	while(1){
+	while(tablero.GameOver()){
 		// Siempre se va a sobre escribir el tablero a la espera de nuevas instrucciones.
 		if( SDL_PollEvent( &manager.event )){
 			apply_surface(60, 120, tablero_img, screen);
@@ -533,6 +589,7 @@ void juego(){
 		}
 		SDL_Flip(screen);
 	}
+	SDL_Delay(10000);
 }
 
 int main(int argc, char **argv){
