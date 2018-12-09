@@ -195,6 +195,7 @@ class Tablero{
 			return false;
 		}
 		void powers(Gema gem,int y,int x){
+			this->Re_Fill();
 			if(gem.tipo==1) return;
 			else if(gem.tipo==2){
 				tab[y][x].color=0;
