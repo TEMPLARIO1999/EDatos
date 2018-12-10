@@ -1,6 +1,12 @@
 #include "graficos.h"
 #include <time.h>
 
+struct Trecord{			//Estructura utilizada para guardar los records
+	int puntuacion;
+	int nivel;
+	string alias;
+};
+
 class Gema{
 	public:
 		int color;   //morado amarillo naranja verde azul rojo blanco 
@@ -32,6 +38,7 @@ class Tablero{
 		int vx,vy;
 	protected:
 		Jugador *Player;
+		Trecord rec[11];
 	public:
 		Tablero(string alias){
 			vx=0; vy=0;
@@ -424,7 +431,40 @@ class Tablero{
 			}
 			return false;
 		}
+		void Limp_Rec(){
+			for(int i=0;i<11;i++){
+				rec[i].puntuacion=0;
+				rec[i].nivel=0;
+				rec[i].alias="";
+			}
+		}
+		void Save_Rec(){
+			Trecord aux;
+			this->Limp_Rec();
+			int i=1;
+			if((archivo=fopen("Records.dat","ab+"))==NULL) exit(0);
+			while(i<11) {
+				fread(&rec[i],sizeof(Trecord),1,archivo);
+				i++;
+			}
+			rec[0].puntuacion=Player->puntuacion; rec[0].nivel=Player->nivel; rec[0].alias=Player->alias;
+			fclose(archivo);
+			for(int i=0;i<11;i++)
+				for(int j=i;j<11;j++)
+					if(rec[i].puntuacion>rec[j].puntuacion && rec[j].puntuacion!=0 ){
+						aux=rec[i];
+						rec[i]=rec[j];
+						rec[j]=aux;
+					}
+			if((archivo=fopen("Records.dat","wb"))==NULL) exit(0);
+			for(int i=0;i<10;i++){
+				fwrite(&rec[i],sizeof(Trecord),1,archivo);
+			}
+			fclose(archivo);
+			Limp_Rec();
+		}
 		friend void juego();
+		friend void Show_Records();
 };
 
 class menu {
@@ -562,7 +602,7 @@ class EventManager{
 void juego(){
 	// movimiento, cuando se da click identificamos hacia donde se mueve
 	// 1 arriba, 2 derecha, 3 abajo, 4 izquierda. Sentido del reloj.
-	int mov;
+	int mov; bool inicio=true;
 	// Objeto que nos permitirá el manejo de eventos a lo largo del juego.
 	EventManager manager;
 	string nc = manager.handle_nickname_event();
@@ -572,9 +612,14 @@ void juego(){
 	tablero.Check_Est();
 	tablero.Chek_Comb();
 	tablero.Re_Fill();
-	while(tablero.GameOver()){
+	while(tablero.GameOver() && inicio){
 		// Siempre se va a sobre escribir el tablero a la espera de nuevas instrucciones.
 		if( SDL_PollEvent( &manager.event )){
+			if( manager.event.type == SDL_KEYDOWN ) 
+				if(manager.event.key.keysym.sym == SDLK_ESCAPE){
+					inicio = false;
+					break;
+				} 
 			apply_surface(0, 0, mundos[(tablero.get_nv()-1)%5], screen);
 			apply_surface(60, 120, tablero_img, screen);
 			// Si el mouse se mueve, mouse_motion_ev se encarga del movimiento.
@@ -602,7 +647,35 @@ void juego(){
 		}
 		SDL_Flip(screen);
 	}
-	SDL_Delay(10000);
+	tablero.Save_Rec();
+	PUNTUACION_PARA_PASAR_DE_NIVEL=2500;
+}
+
+void Show_Records(){
+	Trecord aux;
+	string recplay;
+	int x=200,y=100;
+	if((archivo=fopen("Records.dat","rb"))==NULL) exit(0);
+	while(1){
+		if(SDL_PollEvent (&event)){
+			if(event.type==SDL_KEYDOWN) 
+				if(event.key.keysym.sym == SDLK_ESCAPE) break;
+			y=100;
+			rewind(archivo);
+			apply_surface(0, 0, record, screen);
+			for(int i=0;i<10;i++){
+				fread(&aux,sizeof(Trecord),1,archivo);
+				if(aux.nivel!=0){
+					recplay = aux.alias+"   "+to_string(aux.nivel)+"   "+to_string(aux.puntuacion);
+					recjugador=TTF_RenderText_Solid( font_big, recplay.c_str(), white );
+					apply_surface(y,x, recjugador, screen);
+					y+=50;
+				}
+			}
+		}
+		SDL_Flip(screen);
+	}
+	fclose(archivo);
 }
 
 int main(int argc, char **argv){
@@ -614,6 +687,12 @@ int main(int argc, char **argv){
 		switch(m.disp_menu()){
 			case 0:
 				juego();
+				break;
+			case 1:
+				Show_Records();
+				break;
+			case 2:
+				exit(0);
 				break;
 		}
 	}

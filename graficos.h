@@ -11,6 +11,9 @@ const int SCREEN_BPP = 32;
 const float AUMENTO_PUNTUACION = 0.5;
 float PUNTUACION_PARA_PASAR_DE_NIVEL = 2500;
 
+FILE *archivo;
+SDL_Event event;
+SDL_Surface *recjugador = NULL;
 SDL_Surface *screen = NULL;
 SDL_Surface *m0 = NULL;
 SDL_Surface *m1 = NULL;
@@ -21,6 +24,7 @@ SDL_Surface *destello = NULL;
 SDL_Surface *tablero_img = NULL;
 SDL_Surface *puntos = NULL;
 SDL_Surface *status = NULL;
+SDL_Surface *record = NULL;
 vector <vector<SDL_Surface *>> gemas;
 SDL_Surface *pos_blanca = NULL;
 SDL_Surface *message = NULL;
@@ -53,6 +57,7 @@ bool load_files() {
 	m1 = load_image( "menu/menu_1.bmp" );
 	m2 = load_image( "menu/menu_2.bmp" );
 	m3 = load_image( "menu/menu_3.bmp" );
+	record = load_image( "Frecord.bmp" );
 	nombre_jugador = load_image( "menu/nombre_jugador.png" );
 	tablero_img = load_image( "mundos/tablero.png" );
 	status = load_image( "mundos/status.png" );
