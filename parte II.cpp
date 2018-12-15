@@ -435,33 +435,17 @@ class Tablero{
 			for(int i=0;i<11;i++){
 				rec[i].puntuacion=0;
 				rec[i].nivel=0;
-				rec[i].alias="";
+				rec[i].alias=" ";
 			}
 		}
 		void Save_Rec(){
 			Trecord aux;
-			this->Limp_Rec();
+			FILE * archivo=NULL;
 			int i=1;
-			if((archivo=fopen("Records.dat","ab+"))==NULL) exit(0);
-			while(i<11) {
-				fread(&rec[i],sizeof(Trecord),1,archivo);
-				i++;
-			}
-			rec[0].puntuacion=Player->puntuacion; rec[0].nivel=Player->nivel; rec[0].alias=Player->alias;
+			if((archivo=fopen("Records.dat","ab"))==NULL) exit(0);
+			aux.puntuacion=Player->puntuacion; aux.nivel=Player->nivel; aux.alias=Player->alias;
+			fwrite(&aux,sizeof(Trecord),1,archivo);
 			fclose(archivo);
-			for(int i=0;i<11;i++)
-				for(int j=i;j<11;j++)
-					if(rec[i].puntuacion>rec[j].puntuacion && rec[j].puntuacion!=0 ){
-						aux=rec[i];
-						rec[i]=rec[j];
-						rec[j]=aux;
-					}
-			if((archivo=fopen("Records.dat","wb"))==NULL) exit(0);
-			for(int i=0;i<10;i++){
-				fwrite(&rec[i],sizeof(Trecord),1,archivo);
-			}
-			fclose(archivo);
-			Limp_Rec();
 		}
 		friend void juego();
 		friend void Show_Records();
@@ -653,25 +637,27 @@ void juego(){
 
 void Show_Records(){
 	Trecord aux;
+	FILE * archivo=NULL;
 	string recplay;
-	int x=200,y=100;
+	int x=200,y=100,i;
 	if((archivo=fopen("Records.dat","rb"))==NULL) exit(0);
 	while(1){
+		i=0;
 		if(SDL_PollEvent (&event)){
 			if(event.type==SDL_KEYDOWN) 
 				if(event.key.keysym.sym == SDLK_ESCAPE) break;
 			y=100;
-			rewind(archivo);
 			apply_surface(0, 0, record, screen);
-			for(int i=0;i<10;i++){
-				fread(&aux,sizeof(Trecord),1,archivo);
-				if(aux.nivel!=0){
+			while((fread(&aux,sizeof(Trecord),1,archivo)) && i<10){
+				if(aux.nivel>0){
 					recplay = aux.alias+"   "+to_string(aux.nivel)+"   "+to_string(aux.puntuacion);
 					recjugador=TTF_RenderText_Solid( font_big, recplay.c_str(), white );
 					apply_surface(y,x, recjugador, screen);
 					y+=50;
 				}
+				i++;
 			}
+			rewind(archivo);
 		}
 		SDL_Flip(screen);
 	}

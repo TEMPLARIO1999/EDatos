@@ -4,6 +4,7 @@ using namespace std;
 #include <SDL/SDL_image.h>
 #include <SDL/SDL_ttf.h>
 #include <vector>
+#include <string.h>
 
 const int SCREEN_WIDTH = 1280;
 const int SCREEN_HEIGHT = 720;
@@ -11,7 +12,6 @@ const int SCREEN_BPP = 32;
 const float AUMENTO_PUNTUACION = 0.5;
 float PUNTUACION_PARA_PASAR_DE_NIVEL = 2500;
 
-FILE *archivo;
 SDL_Event event;
 SDL_Surface *recjugador = NULL;
 SDL_Surface *screen = NULL;
