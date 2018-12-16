@@ -1,10 +1,11 @@
 #include "graficos.h"
 #include <time.h>
+#include <string.h>
 
 struct Trecord{			//Estructura utilizada para guardar los records
 	int puntuacion;
 	int nivel;
-	string alias;
+	char alias[30];
 };
 
 class Gema{
@@ -38,7 +39,6 @@ class Tablero{
 		int vx,vy;
 	protected:
 		Jugador *Player;
-		Trecord rec[11];
 	public:
 		Tablero(string alias){
 			vx=0; vy=0;
@@ -358,8 +358,6 @@ class Tablero{
 					}
 				}
 			}
-			// Checamos si el usuario será cambiado de nivel.
-			this->check_lvl_change();
 		}
 		void Change_Tab(){
 			for(int i=0;i<8;i++){
@@ -431,20 +429,72 @@ class Tablero{
 			}
 			return false;
 		}
-		void Limp_Rec(){
-			for(int i=0;i<11;i++){
-				rec[i].puntuacion=0;
-				rec[i].nivel=0;
-				rec[i].alias=" ";
-			}
-		}
 		void Save_Rec(){
-			Trecord aux;
-			FILE * archivo=NULL;
-			int i=1;
-			if((archivo=fopen("Records.dat","ab"))==NULL) exit(0);
-			aux.puntuacion=Player->puntuacion; aux.nivel=Player->nivel; aux.alias=Player->alias;
-			fwrite(&aux,sizeof(Trecord),1,archivo);
+			int i=0;
+			// Booleano que determinará si el jugador ha sacado récord.
+			bool existe_record = false;
+			// Definimos un vector de records de 20 posiciones para poder comparar.
+			Trecord records[20], aux;
+			// Abrimos nuestro archivo de records. Si no existe cierra la ejecucion.
+			FILE *archivo = fopen("Records.dat", "rb+");
+			if(archivo==NULL) {
+				exit(1);
+			}
+			// Recuperamos todos los records. De no existir los ponemos a 0.
+			if(fread(&records[i], sizeof(Trecord), 1, archivo)) {
+				while(!feof(archivo)) {
+					i++;
+					fread(&records[i], sizeof(Trecord), 1, archivo);
+				}
+			} else {
+				rewind(archivo);
+				for(int i=0; i<20; i++){
+					strcpy(records[i].alias, ("Jugador " + to_string(i+1)).c_str());
+					records[i].nivel = 1;
+					records[i].puntuacion = 0;
+				}
+			}
+			Trecord anterior;
+			// Hacemos las comparaciones de puntuaciones. La condicion esta dada por:
+			// - Si el record esta en ceros, significa que puede modificarse por estar vacio.
+			// - Si el puntaje es menor a alguno de los records.
+			for(i=0; i<20; i++) {
+				if(Player->GetPuntuacion()<records[i].puntuacion or !records[i].puntuacion) {
+					// Cuando un record es generado, los demas se desplazaran una posicion abajo
+					// desde la posicion del nuevo record.
+					// Primeramente guardamos en la posición actual el nuevo récord. 
+					// Guardamos la posición que había antes para recorrerla.
+					anterior = records[i];
+					records[i].puntuacion = Player->GetPuntuacion();
+					strcpy(records[i].alias, Player->alias.c_str());
+					records[i].nivel = Player->nivel;
+					for(int j=i+1; j<10; j++) {
+						aux = records[j];
+						records[j].puntuacion=anterior.puntuacion;
+						strcpy(records[j].alias, anterior.alias);
+						records[j].nivel = anterior.nivel;
+						anterior = aux;
+					}
+					existe_record = true;
+					break;
+				}
+			}
+			rewind(archivo);
+			// Escribimos los 10 records al archivo para que se guarden.
+			for(int i=0; i<20; i++)
+				fwrite(&records[i], sizeof(Trecord), 1, archivo);
+			// Felicitamos al usuario. En caso de existir récord se aplica otra imagen.
+			if(existe_record)
+				apply_surface(0, 0, ganador_con_record, screen);
+			else
+				apply_surface(0, 0, ganador, screen);
+			SDL_Flip(screen);
+			bool salir = false;
+			while(!salir)
+				while(SDL_PollEvent( &event ))
+					if(event.type == SDL_KEYDOWN)
+						if (event.key.keysym.sym == SDLK_ESCAPE) salir = true;
+			// Cerramos el archivo para evitar perdida de datos.
 			fclose(archivo);
 		}
 		friend void juego();
@@ -628,6 +678,8 @@ void juego(){
 			tablero.imprimir_gemas();
 			tablero.Check_Est();
 			tablero.Chek_Comb();
+			// Checamos si el usuario será cambiado de nivel.
+			tablero.check_lvl_change();
 		}
 		SDL_Flip(screen);
 	}
@@ -636,32 +688,36 @@ void juego(){
 }
 
 void Show_Records(){
+	bool salir = false;
 	Trecord aux;
 	FILE * archivo=NULL;
 	string recplay;
-	int x=200,y=100,i;
+	int x=250,i=0,y;
 	if((archivo=fopen("Records.dat","rb"))==NULL) exit(0);
-	while(1){
-		i=0;
-		if(SDL_PollEvent (&event)){
-			if(event.type==SDL_KEYDOWN) 
-				if(event.key.keysym.sym == SDLK_ESCAPE) break;
-			y=100;
-			apply_surface(0, 0, record, screen);
-			while((fread(&aux,sizeof(Trecord),1,archivo)) && i<10){
-				if(aux.nivel>0){
-					recplay = aux.alias+"   "+to_string(aux.nivel)+"   "+to_string(aux.puntuacion);
-					recjugador=TTF_RenderText_Solid( font_big, recplay.c_str(), white );
-					apply_surface(y,x, recjugador, screen);
-					y+=50;
-				}
-				i++;
-			}
-			rewind(archivo);
+	apply_surface(0, 0, record, screen);
+	y=180;
+	recplay =  "No               Nickname               Nivel               Puntuación";
+	recjugador=TTF_RenderText_Solid( font, recplay.c_str(), white );
+	apply_surface(x,y, recjugador, screen);
+	while((fread(&aux,sizeof(Trecord),1,archivo)) && i<20){
+		if(aux.nivel>0){
+			y+=20;
+			recplay =  to_string(i+1) + "                    " + string(aux.alias)+"                    "+to_string(aux.nivel)+"                   "+to_string(aux.puntuacion);
+			recjugador=TTF_RenderText_Solid( font, recplay.c_str(), white );
+			apply_surface(x,y, recjugador, screen);
 		}
-		SDL_Flip(screen);
+		i++;
 	}
+	SDL_Flip(screen);
+	rewind(archivo);
 	fclose(archivo);
+	while(!salir) {
+		while(SDL_PollEvent( &event )) {
+			if(event.type == SDL_KEYDOWN) {
+				if (event.key.keysym.sym == SDLK_ESCAPE) salir = true;
+			}
+		}
+	}
 }
 
 int main(int argc, char **argv){

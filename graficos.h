@@ -25,6 +25,8 @@ SDL_Surface *tablero_img = NULL;
 SDL_Surface *puntos = NULL;
 SDL_Surface *status = NULL;
 SDL_Surface *record = NULL;
+SDL_Surface *ganador_con_record = NULL;
+SDL_Surface *ganador = NULL;
 vector <vector<SDL_Surface *>> gemas;
 SDL_Surface *pos_blanca = NULL;
 SDL_Surface *message = NULL;
@@ -63,6 +65,8 @@ bool load_files() {
 	status = load_image( "mundos/status.png" );
 	destello = load_image( "gemas/destello.png" );
 	pos_blanca = load_image("gemas/blanco.png");
+	ganador = load_image("ganador.png");
+	ganador_con_record = load_image("ganador_record.png");
 	font = TTF_OpenFont( "fuente.ttf", 20);
 	status_font = TTF_OpenFont( "status2.ttf", 30);
 	font_big = TTF_OpenFont( "fuente.ttf", 48);
