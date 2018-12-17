@@ -10,14 +10,15 @@ struct Trecord{			//Estructura utilizada para guardar los records
 
 class Gema{
 	public:
-		int color;   //morado amarillo naranja verde azul rojo blanco 
-		int tipo;	 //1=Normal 2=Estelar 3=Explosiva 4=Cubo
-		Gema(){
+		int color;  			 //morado amarillo naranja verde azul rojo blanco 
+		int tipo;				 //1=Normal 2=Estelar 3=Explosiva 4=Cubo
+		Gema(){					 //Cuando se llama al constructor se inicializa con un color random y tipo normal
 			color=(rand()%7)+1;
 			tipo=1;
 		}
 };
 
+//Clase donde se guardan los datos del jugador, asi como su nombre el nivel que lleva y su puntuacion
 class Jugador{
 	public:
 		string alias;
@@ -28,36 +29,39 @@ class Jugador{
 			nivel=1;
 			puntuacion=0;
 		}
-		int GetPuntuacion(){
+		int GetPuntuacion(){		//retorna la puntuacion 
 			return puntuacion;
 		}
 };
 
+//Clase donde se guardan las variables principales del tablero, ademas de los metodos necesarios para hacer
+//Todos las funciones del juego de manera logica
 class Tablero{
 	private:
-		Gema tab[8][8];
-		int vx,vy;
+		Gema tab[8][8]; //Utilizamos una matriz de tipo gema simulando un tablero de 8x8 con una gema por posicion
+		int vx,vy;		//Variables auxiliares
 	protected:
-		Jugador *Player;
+		Jugador *Player;	//El tablero contiene un objeto de tipo jugador(el que esta jugando) de esta manera
+							//se accede a todos los datos mas facil
 	public:
-		Tablero(string alias){
+		Tablero(string alias){	
 			vx=0; vy=0;
-			Player = new Jugador(alias);
-			for(int i=0;i<8;i++){
+			Player = new Jugador(alias);	//Inicia al jugador mandando su alias
+			for(int i=0;i<8;i++){			//llenamos el tablero de gemas
 				for(int j=0;j<8;j++){
 					tab[i][j]=Gema();
 				}
 			}
-			while(Check_Est() || Chek_Comb()){
+			while(Check_Est() || Chek_Comb()){	//Eliminamos las combinaciones basura antes de iniciar partida
 				Re_Fill();
 				for(int i=0;i<8;i++) for(int j=0;j<8;j++) if(tab[i][j].tipo!=1) tab[i][j]=Gema();
 			}
 			Player->puntuacion=0;
 		}
-		int get_nv () {
+		int get_nv () {		//Retorna el nivel del jugador
 			return this->Player->nivel;
 		}
-		void imprimir_gemas(){
+		void imprimir_gemas(){		
 			int posx = 60, posy = 120;
 			string auxiliar;
 			for(int i=0; i<8; i++, posy+=60){
@@ -77,17 +81,25 @@ class Tablero{
 			apply_surface(900, 565, message, screen);
 			imprimir_rectangulo(screen, black, this->Player->puntuacion);
 		}
-		bool B_trio(int dir,int y,int x){    //Direccion 0=Horizontal 1=vertical busca trios
-			if(dir==0){
+		
+		//Direccion 0=Horizontal 1=vertical 
+		//Esta funcion se encarga de buscar una secuencia de tres gemas en cualquier direccion a partir de 
+		//una casilla o gema que se encuentra en las coordenadas x,y recibidas
+		//regresa true siencuentra algun trio
+		bool B_trio(int dir,int y,int x){    
+			if(dir==0){	
+				//busca horizontalmente si los x y y no se salen del rango
 				if(y-2>=0 && x>=0 && x<=7){
 					if(tab[y][x].color!=0 && tab[y][x].color==tab[y-1][x].color && tab[y-1][x].color==tab[y-2][x].color){
-						vx=x; vy=y;
-						powers(tab[y-1][x],y-1,x); powers(tab[y-2][x],y-2,x);
-						tab[y-1][x].color=0; tab[y-2][x].color=0;
-						return true;
+						vx=x; vy=y;	//guarda la posicion si existe un grupo de tres
+						powers(tab[y-1][x],y-1,x); powers(tab[y-2][x],y-2,x); //Activa la funcion poderes para cada gema 
+						//													en el grupo exepto la que se mando como coordenada
+						tab[y-1][x].color=0; tab[y-2][x].color=0; //Destruye las gemas
+						return true;	
 					}else return false;
 				}else return false;
 			}else if(dir==1){
+				//Lo mismo ocurre para la direccion vertical 
 				if(y+2<=7 && x<=7 && x>=0){
 					if(tab[y][x].color!=0 && tab[y][x].color==tab[y+1][x].color && tab[y+1][x].color==tab[y+2][x].color){
 						vx=x; vy=y;
@@ -98,12 +110,23 @@ class Tablero{
 				}else return false;
 			}
 		}
-		bool Check_Est(){					//Comprueba si hay combinaciones estelares
+		
+		//Comprueba si hay combinaciones estelares
+		//Este metodo se apoya de la funcion B_trio y lo qeu hace es buscar alguna combinacion estelar 
+		// es decir una T o una L en todo el tablero
+		//Regresa un true si encuentra alguna combinacion y si no es asi regresa un false
+		bool Check_Est(){
 			for(int i=0;i<8;i++){
-				for(int j=0;j<8;j++){
+				for(int j=0;j<8;j++){ //Con estos dos for busca en cada gema de toda la matriz
+					//Si encuentra un trio hacia adelante y no se sale del rango de el tablero
 					if(tab[i][j].color!=0 && tab[i][j].color==tab[i][j+1].color && tab[i][j+1].color==tab[i][j+2].color){
 						if(j+2<=7) 
+						//entonces busca un trio hacia arriba y hacia abajo en cada una de las tres gemas 
 						if(B_trio(0,i,j) || B_trio(1,i,j) || B_trio(0,i,j+1) || B_trio(1,i,j+1) || B_trio(0,i,j+2) || B_trio(1,i,j+2)){
+							//si encuentra uno de estos quiere decir que hay una combinacion estelar entonces
+							//guarda el color de la gema de interseccion aumenta la puntuacion llama a los poderes
+							//de las tres primeras gemas y destruye estas luego regresa el color de la gema de interseccion
+							//y cambia su tipo a 2 (gema estelar)
 							int aux=tab[vy][vx].color;
 							Player->puntuacion+=300;
 							powers(tab[i][j+1],i,j+1); powers(tab[i][j+2],i,j+2); powers(tab[i][j],i,j);
@@ -113,8 +136,13 @@ class Tablero{
 							return true;
 						}
 					}
+					//si no encuentra en el primer caso buscamos dos casos especiales 
 					else if(tab[i][j].color!=0 && tab[i][j].color==tab[i+1][j].color && tab[i+1][j].color==tab[i+2][j].color){
+						//mientras o se salga del rango del tablero buscara una T acostada horizontalmenete
+						//si encuentra una T en cualquiera de los casos aumenta puntuacion, llama a los poderes
+						//cambia el tipo de la gema interseccion y destruye las demas
 						if(i+2<=7){
+							//puede ser apuntando a la izquierda
 							if(tab[i+1][j].color!=0 && tab[i+1][j].color==tab[i+1][j+1].color && tab[i+1][j+1].color==tab[i+1][j+2].color){
 								if(j+2<=7){
 									Player->puntuacion+=300;
@@ -124,6 +152,7 @@ class Tablero{
 									tab[i+1][j+1].color=0; tab[i+1][j+2].color=0;
 									return true;
 								}
+							//o apuntando a la derecha
 							}else if(tab[i+1][j].color!=0 && tab[i+1][j].color==tab[i+1][j-1].color && tab[i+1][j-1].color==tab[i+1][j-2].color){
 								if(j-2>=0){
 									Player->puntuacion+=300;
@@ -140,8 +169,16 @@ class Tablero{
 			}
 			return false;
 		}
-		bool Comb(int cont,int y,int x,int dir){			//Busca casillas adyacentes 
+		
+		//Busca casillas adyacentes
+		//si la direccion es 1 busca horizontal si es 0 busca vertical
+		//regresa true si encuentra tres o mas gemas adyacentes y false si no es asi
+		bool Comb(int cont,int y,int x,int dir){ 
 			if(dir){
+				//Si no se sale del rango del tablero busca si existe una gema de su mismo color adyacente a ella
+				//si es asi se llama recursivamente buscando otra gema adyacente
+				//Si no hay una gema adyacente verifica si encontro mas de tres, si es asi guarda el numero de gemas adyacentes
+				//activa los poderes de la ultima gema y la destruye aumenta puntuacion y regresa
 				if(x+1<=7 && tab[y][x].color!=0 && tab[y][x].color==tab[y][x+1].color) Comb(cont+1,y,x+1,1);
 				else{
 					if(cont>=3) {
@@ -152,6 +189,8 @@ class Tablero{
 						return true;
 					}else return false;
 				}
+				//cuando regresa recursivamente activa los poderes y destruye la gema actual 
+				//ademas aumenta puntuacion todo esto si se encontraron 3 o mas gemas adyacentes
 				if(vx>=3) {
 					powers(tab[y][x],y,x);
 					tab[y][x].color=0;
@@ -159,6 +198,7 @@ class Tablero{
 					return true;
 				}return false;
 			}else{
+				//Lo mismo que se realiza en la direccion horizontal se realiza para la vertical
 				if(y+1<=7 && tab[y][x].color!=0 && tab[y][x].color==tab[y+1][x].color) Comb(cont+1,y+1,x,0);
 				else{
 					if(cont>=3) {
@@ -177,20 +217,29 @@ class Tablero{
 				}return false;
 			}
 		}
-		bool Chek_Comb(){   //Comprueba si hay combinaciones de 3 4 o 5 gemas :3
+		
+		//Comprueba si hay combinaciones de 3 4 o 5 gemas 
+		//Este metodo se auxilia del metodo comb y lo llama para que se aplique recursivamente
+		//Regresa true si se encuentra alguna combinacion de gemas en cualquier direccion y false en caso contrario
+		bool Chek_Comb(){   
 			for(int i=0;i<8;i++){
-				for(int j=0;j<8;j++){
-					vx=0; vy=tab[i][j].color;
+				for(int j=0;j<8;j++){  //Con estos dos for recorremos toda la matriz que representa el tablero
+					vx=0; vy=tab[i][j].color;	//Guardamos siempre el color de la gema actual en una variable auxiliar
 					if(Comb(1,i,j,1)){
-						if(vx==3){
+						//Si encuentra una combinacion de gemas de manera horizontal, verifica si fue de tres
+						//cuatro o cinco gemas 
+						if(vx==3){ //si es de tres activa los poderes de la gema la detruye y aumenta puntuacion
 							powers(tab[i][j],i,j);
 							tab[i][j].color=0;
 							Player->puntuacion+=50;
+						//si es de cuatro o de cinco cambia el tipo de la gema ya que fue combinacion especial
 						}else if(vx==4) tab[i][j].tipo=3;
 						else if(vx>=5) tab[i][j].tipo=4;
-						if(vx>3) tab[i][j].color=vy;
+						if(vx>3) tab[i][j].color=vy; //regresa el color de la gema actual si la combinacion fue especial
 						return true;
 					}else if(Comb(1,i,j,0)){
+						//Realiza los mismos pasos pero ahora busca combinaciones de gemas de manera vertical
+						//busca combinacion de tres cuatro cinco auxiliandose de comb
 						if(vx==3){
 							powers(tab[i][j],i,j);
 							tab[i][j].color=0;
@@ -204,10 +253,17 @@ class Tablero{
 			}
 			return false;
 		}
+		
+		//Esta funcion permite activar los poderes de la gema enviada como parametro y las coordenadas x,y 
+		//del tablero donde se encuentra dicha gema, no tiene valor de retorno
 		void powers(Gema gem,int y,int x){
-			this->Re_Fill();
-			if(gem.tipo==1) return;
+			this->Re_Fill(); //Rellena espacios vacios si los hay para evitar errores
+			if(gem.tipo==1) return; //si la gema es tipo 1 no tiene poder
 			else if(gem.tipo==2){
+				//Si la gema es tipo dos destruye todas las gemas que estan en la misma fila y en la misma
+				//columna que la gema enviada despues de destruir la gema enviada y aumentar puntuacion
+				//conforme va destruyendo gemas va activando poderes para cualquier reaccion en cadena
+				//y aumentando la puntuacion
 				tab[y][x].color=0;
 				Player->puntuacion+=100;
 				for(int i=0;i<8;i++) {
@@ -225,9 +281,12 @@ class Tablero{
 					}
 				}
 			}else if(gem.tipo==3){
+				//Si la gema es de tipo tres destruye la gema actual y hace un aumento de puntuacion
 				tab[y][x].color=0;
 				Player->puntuacion+=150;
 				Player->puntuacion+=400;
+				//Mientras no se salga del rango del tablero, va destruyendo y activando los poderes de las 
+				//gemas que estan al rededor de la gema enviada
 				if(y-1>=0 && x-1>=0) {
 					powers(tab[y-1][x-1],y-1,x-1); tab[y-1][x-1].color=0;
 				} if(y-1>=0){
@@ -246,12 +305,17 @@ class Tablero{
 					powers(tab[y+1][x+1],y+1,x+1); tab[y+1][x+1].color=0;	
 				}
 			}else if(gem.tipo==4){
+				//si la gema es de tipo cuatro guarda el color de la gema enviada y aumenta la puntuacion
 				vx=tab[y][x].color;
 				Player->puntuacion+=200;
 				tab[y][x].color=0;
+				//despues destruye la gema y busca por todo el tablero a las gemas que contengan el mismo color
+				//que la gema recibida 
 				for (int i=0;i<8;i++){
 					for(int j=0;j<8;j++){
 						if(tab[i][j].color==vx){
+							//si las gemas tienen el mismo color estas son destruidas y se llaman a sus poderes
+							//ademas se aumenta la puntuacion por cada gema destruida
 							powers(tab[i][j],i,j);
 							tab[i][j].color=0;
 							Player->puntuacion+=50;
@@ -260,10 +324,16 @@ class Tablero{
 				}
 			}
 		}
+		
+		//Esta funcion se encarga de rellenar los espacios vacios en el tablero
 		void Re_Fill(){
-			for(int i=7;i>=0;i--){
+			for(int i=7;i>=0;i--){ //con estos dos for busca de abajo hacia arriba y de derecha a izquierda
+								   //una gema destruida
 				for(int j=0;j<8;j++){
 					if(tab[i][j].color==0){
+						//Si se encuentra una gema destruida busca de donde esta la gema hacia arriba una gema
+						//que no este destruida y la intercambia por la gema que encontro destruida
+						//quebramos el ultimo ciclo para seguir buscando
 						for(int k=i;k>=0;k--){
 							if(tab[k][j].color!=0){
 								tab[i][j]=tab[k][j];
@@ -274,8 +344,11 @@ class Tablero{
 					}
 				}
 			}
+			//al final rellenamos de abajo hacia arriba dando una impresion de que las gemas aparecen arriba
+			//y caen hacia abajo
 			for(int i=7;i>=0;i--) for(int j=0;j<8;j++) if(tab[i][j].color==0) tab[i][j]=Gema();
 		}
+		
 		// Se moverán las gemas de acuerdo al movimiento del usuario.
 		// Por ello se necesita el sentido y la casilla que se movió.
 		// Siempre se llama en casos dentro del tablero, por ello posx y posy no necesitan comprobarse.
@@ -359,6 +432,9 @@ class Tablero{
 				}
 			}
 		}
+		
+		//Con esta funcion lo que hacemos cambiar todas las fichas que no sean especiales del tablero
+		//hacemos esto despues de cada nivel
 		void Change_Tab(){
 			for(int i=0;i<8;i++){
 				for(int j=0;j<8;j++){
@@ -382,21 +458,21 @@ class Tablero{
 				}
 			}
 		}
-		void show(){
-			for(int i=0;i<8;i++){
-				for(int j=0;j<8;j++){
-					cout<<tab[i][j].color;
-				}
-				cout<<endl;
-			}
-		}
+		
+		//Con esta funcion se comrueba para cada gema cualquier caso en el que pueda tener una combinacion
+		//regrese un true si hay combinaciones posibles y false si no las hay 
+		//utilizamos este metodo para comprobar si el juego termina por falta de combinaciones
 		bool GameOver(){
+			//con los dos for recorremos todo el tablero siempre cuidando que las comparaciones no se salgan del
+			//rango de la matriz que representa al tablero
 			for(int i=0;i<8;i++){
 				for (int j=0;j<8;j++){
+					//busca posibles combinaciones horizontales hacia la izquierda
 					if(j+3<8){
 						if(tab[i][j].color==tab[i][j+1].color && tab[i][j+1].color==tab[i][j+3].color) return true;
 						if(tab[i][j].color==tab[i][j+2].color && tab[i][j+2].color==tab[i][j+3].color) return true;
 					}
+					//busca casos donde dos gemas horizontales se combinan con una que esta abajo o arriba vertical
 					if(j+2<8){
 						if(i-1>=0) {
 							if(tab[i][j].color==tab[i][j+1].color && tab[i][j+1].color==tab[i-1][j+2].color) return true;
@@ -409,10 +485,13 @@ class Tablero{
 							if(tab[i][j].color==tab[i+1][j+1].color && tab[i+1][j+1].color==tab[i][j+2].color) return true;
 						}
 					}
+					//busca posibles combinaciones verticales hacia abajo 
 					if(i+3<8){
 						if(tab[i][j].color==tab[i+1][j].color && tab[i+1][j].color==tab[i+3][j].color) return true;
 						if(tab[i][j].color==tab[i+2][j].color && tab[i+2][j].color==tab[i+3][j].color) return true;
 					}
+					//busca casos donde dos gemas verticales pueden ser combinadas con una que este a la 
+					//izquierda o a la derecha horizontalmente
 					if(i+2<8){
 						if(j-1>=0) {
 							if(tab[i][j].color==tab[i+1][j-1].color && tab[i+1][j-1].color==tab[i+2][j-1].color) return true;
@@ -447,8 +526,8 @@ class Tablero{
 					fread(&records[i], sizeof(Trecord), 1, archivo);
 				}
 			} else {
-				rewind(archivo);
-				for(int i=0; i<20; i++){
+				rewind(archivo); //regresamos al inicio en el archivo
+				for(int i=0; i<20; i++){ 
 					strcpy(records[i].alias, ("Jugador " + to_string(i+1)).c_str());
 					records[i].nivel = 1;
 					records[i].puntuacion = 0;
@@ -687,20 +766,21 @@ void juego(){
 	PUNTUACION_PARA_PASAR_DE_NIVEL=2500;
 }
 
+//Esta funcion se encarga de mostrar los records cuando en el menu se selecciona la opcion records
 void Show_Records(){
-	bool salir = false;
-	Trecord aux;
-	FILE * archivo=NULL;
-	string recplay;
-	int x=250,i=0,y;
-	if((archivo=fopen("Records.dat","rb"))==NULL) exit(0);
-	apply_surface(0, 0, record, screen);
+	bool salir = false;		//booleano que nos dice cuando salir de la pantalla
+	Trecord aux;			//tomamos una variable auxiliar de trecord
+	FILE * archivo=NULL;	//y una variable para abrir el archivo
+	string recplay;			//en este string guardamos lo que se imprimira para cada juagdor
+	int x=250,i=0,y;		//x,y para coordenadas
+	if((archivo=fopen("Records.dat","rb"))==NULL) exit(0);		//abrimos el archivo
+	apply_surface(0, 0, record, screen);		//se imprime el fondo
 	y=180;
-	recplay =  "No               Nickname               Nivel               Puntuación";
-	recjugador=TTF_RenderText_Solid( font, recplay.c_str(), white );
-	apply_surface(x,y, recjugador, screen);
-	while((fread(&aux,sizeof(Trecord),1,archivo)) && i<20){
-		if(aux.nivel>0){
+	recplay =  "No               Nickname               Nivel               Puntuación";	//encabezado
+	recjugador=TTF_RenderText_Solid( font, recplay.c_str(), white );	//Guardamos como surface el texto
+	apply_surface(x,y, recjugador, screen);		//Lo imprimimos en pantalla
+	while((fread(&aux,sizeof(Trecord),1,archivo)) && i<20){	//recuperamos cada record guardado y lo imprimimos
+		if(aux.nivel>0){									//mientras su nivel no sea 0
 			y+=20;
 			recplay =  to_string(i+1) + "                    " + string(aux.alias)+"                    "+to_string(aux.nivel)+"                   "+to_string(aux.puntuacion);
 			recjugador=TTF_RenderText_Solid( font, recplay.c_str(), white );
@@ -709,9 +789,9 @@ void Show_Records(){
 		i++;
 	}
 	SDL_Flip(screen);
-	rewind(archivo);
+	rewind(archivo);//regresamos y cerramos el archivo
 	fclose(archivo);
-	while(!salir) {
+	while(!salir) {   //mientras no teclee esc salir sera false y continuara mostrando records
 		while(SDL_PollEvent( &event )) {
 			if(event.type == SDL_KEYDOWN) {
 				if (event.key.keysym.sym == SDLK_ESCAPE) salir = true;
@@ -720,21 +800,22 @@ void Show_Records(){
 	}
 }
 
+//Main principal 
 int main(int argc, char **argv){
 	srand(time(NULL));
-	init();
-	load_files();
-	menu m;
+	init();	//Iniciamos la libreria grafica
+	load_files();	//Cargamos los archivos necesarios
+	menu m;	//Instanciamos un objeto de tipo menu
 	while(1){
-		switch(m.disp_menu()){
+		switch(m.disp_menu()){		//De acuerdo a lo que nos regrese el metodo desp_menu es lo que hara el juego
 			case 0:
-				juego();
+				juego();	//jugar
 				break;
 			case 1:
-				Show_Records();
+				Show_Records();	//ver records
 				break;
 			case 2:
-				exit(0);
+				exit(0);	//salir
 				break;
 		}
 	}
