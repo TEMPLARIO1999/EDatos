@@ -6,6 +6,8 @@ class Semilla {
 	private:
 		//Nuestros vectores de ordenamiento, random, peor y mejor caso, asi como su tamaño
 		int *vector, *peor_caso, *mejor_caso, size;
+		//Nuestros vectores originales para que no se modifiquen
+		int *vectorO,*peor_casoO,*mejor_casoO;
 	public:
 		Semilla() {
 			size = 0;
@@ -14,21 +16,27 @@ class Semilla {
 			cin >> size;
 			// Reservamos la memoria para cada vector.
 			vector = new int [size]; peor_caso = new int[size]; mejor_caso = new int[size];
+			vectorO = new int [size]; peor_casoO = new int[size]; mejor_casoO = new int[size];
 			// Construímos cada uno de los vectores.
 			for(int i=0, j=size; i<size; i++, j--){
-				vector[i] = (rand()%100)+1;
-				peor_caso[i] = j;
-				mejor_caso[i] = i+1;
+				vectorO[i] = (rand()%100)+1;
+				peor_casoO[i] = j;
+				mejor_casoO[i] = i+1;
+				vector[i] = vectorO[i];
+				peor_caso[i] = peor_casoO[i];
+				mejor_caso[i] = mejor_casoO[i];
 			}
 			system("cls");
 		}
+		//con esta funcion copiamos los vectores originales en los copia
 		void regenerar_vectores(){
-			for(int i=0, j=size; i<size; i++, j--){
-				vector[i] = (rand()%100)+1;
-				peor_caso[i] = j;
-				mejor_caso[i] = i+1;
+			for(int i=0; i<size; i++){
+				vector[i] = vectorO[i];
+				peor_caso[i] = peor_casoO[i];
+				mejor_caso[i] = mejor_casoO[i];
 			}
 		}
+		//regresan cada uno de los vectores
 		int *get_vector(){
 			return vector;
 		}
@@ -38,11 +46,9 @@ class Semilla {
 		int *get_mejor(){
 			return mejor_caso;
 		}
+		//retorna el tamaño de los vectores
 		int get_size(){
 			return size;
-		}
-		void imp_vec(int *a,int n){
-			for (int i=0;i<n;i++) cout<<"["<<a[i]<<"]";
 		}
 };
 
@@ -51,8 +57,8 @@ class Benchmark {
 	public:
 		string names[7] = {"MergeSort ","QuickSort ","ShellSort ","HeapSort  ","Seleccion ","Inserccion","Burbuja   "};
 		string vec[3] = {"CASO NORMAL","MEJOR CASO","PEOR CASO"};
-		// Variables de condiciones y permutaciones.
-		int condiciones[7][3], cambios[7][3]; //Cambios xd
+		// Variables de condiciones y cambios.
+		int condiciones[7][3], cambios[7][3]; 
 		/*
 		Se manejara cada metodo con un indice en las matrices
 		Indice 0 -> Metodo MergeSort
@@ -75,19 +81,22 @@ class Benchmark {
 					cambios[i][j]=0;
 				} 
 		}
+		//Imprime las variables de un metodo de acuerdo al numero que le mandamos
 		void PrintOne(int n){
-			cout<< "METODO" << "VECTOR" << "CONDICIONES" << "PERMUTACIONES" <<endl<<endl;
+			cout<< "	METODO" << "		VECTOR" << "		CONDICIONES" << "	CAMBIOS" <<endl<<endl;
 			for (int i=0;i<3;i++)
-				cout<< names[n] << vec[i] << condiciones[n][i] << cambios[n][i] <<endl;
+				cout<< "	"<< names[n] << "	"<< vec[i] <<  "	"<<condiciones[n][i] <<"		"<< cambios[n][i] <<endl;
 		}
+		//imprime una tabla con las variables de todos los metodos en una tabla comparativa
 		void PrintAll(){
-			cout<< "METODO" << "VECTOR" << "CONDICIONES" << "PERMUTACIONES" <<endl<<endl;
-			for (int j=0;j<7;j++){
+			cout<< "	METODO" << "		VECTOR" << "		CONDICIONES" << "	CAMBIOS" <<endl<<endl;
+			for (int n=0;n<7;n++){
 				for (int i=0;i<3;i++)
-					cout<< names[j] << vec[i] << condiciones[j][i] << cambios[j][i] <<endl;
+					cout<< "	"<< names[n] << "	"<< vec[i] <<  "	"<<condiciones[n][i] <<"		"<< cambios[n][i] <<endl;
 				cout<<endl;
 			}
 		}
+		//Manda a llamar al metodo seleccionado mediante op en sus tres casos
 		void Check_One(int *array,int *best,int *worst, int n,int op){
 			int *a;
 			switch(op){
@@ -130,6 +139,8 @@ class Benchmark {
 					cout<<endl<<"ERROR INTERNO"<<endl;
 			}
 		}
+		//dentro de un for manda a llamar a cada metodo utilizando la funcion check_one enviandole numeros
+		//del 0 al 7 ademas de ir regenerando los vectores para que todos los metodos ordenen los mismos vectores
 		void Check_All(){
 			Semilla s;
 			for (int i=0;i<7;i++){
@@ -137,6 +148,7 @@ class Benchmark {
 				s.regenerar_vectores();
 			}
 		}
+		//limpia las variables que guardan las condiciones y los cambios de cada metodo
 		void Clean(){
 			for (int i = 0; i < 7 ; i++ ) 
 				for (int j = 0; j < 3; j++ ){
@@ -144,31 +156,37 @@ class Benchmark {
 					cambios[i][j]=0;
 				}
 		}
-		
+		//esta funcion es una funcion auxiliar que utiliza el metodo merge sort
 		void Merge(int *arr1,int *arr2, int *array, int n,int cast) {  		//Funcion auxiliar del metodo mergesort
 			int i=0, j=0, k=0;
 			condiciones[0][cast]++;
 			while (i < n/2 && j < n - n/2) {
 				condiciones[0][cast]++;
 		  		if (arr1[i] < arr2[j]) { 
+		  			cambios[0][cast]++;
 		  			array[k] = arr1 [i]; 
 		  			i++; k++;
 		 	    } else { 
+		 	    	cambios[0][cast]++;
 		  			array[k] = arr2[j]; 
 		  			j++; k++;
 		  		} 
 			}
 			condiciones[0][cast]++;
 			while (i < n/2) { 
+				cambios[0][cast]++;
 				array[k] = arr1 [i]; 
 				i++; k++;
 			} 
 			condiciones[0][cast]++;
 		 	while (j < n-n/2) { 
+		 		cambios[0][cast]++;
 		  		array[k] = arr2 [j]; 
 		  		j++; k++;
 		 	}  
-		} 
+		}
+		//el metodo merge sort lo que hace es ir partiendo el vector en dos vectores hasta llegar a ser un vector
+		//de un elemento y despues los va intercalando para que quede ordenado
 		int * MergeSort (int *array, int n,int cast) { 		//Metodo de ordenamiento MergeSort
 			condiciones[0][cast]++;
 			if(n>1) {
@@ -176,8 +194,11 @@ class Benchmark {
 				condiciones[0][cast]++;
 				for	(int i=0,j=0;i<n;i++){
 					condiciones[0][cast]++;
-					if(i<n/2) arr1[i]=array[i];
-					else{ 
+					if(i<n/2) {
+						cambios[0][cast]++;
+						arr1[i]=array[i];
+					}else{
+						cambios[0][cast]++;
 						arr2[j]=array[i]; 
 						j++;
 					}
@@ -198,11 +219,13 @@ class Benchmark {
 				condiciones[1][cast]++;
 		  		if (array[i] < valor_pivote){
 		  			pivote++; 
+		  			cambios[1][cast]++;
 		  			aux=array[i];
 		  			array[i]=array[pivote];
 		  			array[pivote]=aux;
 		  		}
 		 	}
+		 	cambios[1][cast]++;
 		 	aux=array[begin];
 		 	array[begin]=array[pivote];
 		 	array[pivote]=aux;
@@ -212,6 +235,7 @@ class Benchmark {
 			int pivote;
 			condiciones[1][cast]++;
 			if(begin < end){
+				cambios[1][cast]++;
 				pivote=Quick(array, begin, end,cast);
 				Quicksort(array, begin, pivote-1,cast);
 				Quicksort(array, pivote+1, end,cast);
@@ -223,10 +247,15 @@ class Benchmark {
 			condiciones[2][cast]++;
 		    for (int k = n/2; k > 0; k /= 2) {
 		    	condiciones[2][cast]++;
-		        for (int i = k; i < n; i++ ) { 
+		        for (int i = k; i < n; i++ ) {
+		        	cambios[2][cast]++;
 		            int aux = array[i],j;
 					condiciones[2][cast]++;     
-		            for (j = i; j >= k && array[j - k] > aux; j -= k) array[j] = array[j - k]; 
+		            for (j = i; j >= k && array[j - k] > aux; j -= k) {
+		            	cambios[2][cast]++;
+						array[j] = array[j - k];
+					}
+					cambios[2][cast]++;	
 		            array[j] = aux; 
 		        } 
 		    } 
@@ -238,11 +267,18 @@ class Benchmark {
 		    int l = 2*i + 1; 
 		    int r = 2*i + 2;
 		    condiciones[3][cast]++;
-		    if (l < n && array[l] > array[max]) max = l; 
-		    condiciones[3][cast]++;
-		    if (r < n && array[r] > array[max]) max = r;
-		    condiciones[3][cast]++;
-		    if (max != i) { 
+		    if (l < n && array[l] > array[max]) {
+		    	cambios[3][cast]++;
+				max = l; 
+			}    
+			condiciones[3][cast]++;
+		    if (r < n && array[r] > array[max]) {
+		    	cambios[3][cast]++;
+				max = r;
+			}    
+			condiciones[3][cast]++;
+		    if (max != i) {
+		    	cambios[3][cast]++;
 		        swap(array[i], array[max]); 
 		        heap(array, n, max,cast); 
 		    } 
@@ -251,7 +287,8 @@ class Benchmark {
 			condiciones[3][cast]++;
 		    for (int i = n / 2 - 1; i >= 0; i--) heap(array, n, i,cast);
 		    condiciones[3][cast]++;
-		    for (int i=n-1; i>=0; i--) { 
+		    for (int i=n-1; i>=0; i--) {
+		    	cambios[3][cast]++;
 		        swap(array[0], array[i]); 
 		        heap(array, i, 0,cast); 
 		    }
@@ -261,12 +298,17 @@ class Benchmark {
 		int * seleccion(int * array,int n,int cast){		//Metodo de seleccion
 			condiciones[4][cast]++;
 			for (int i = 0; i < n; i++) {
+				cambios[4][cast]++;
 			    int min = i;
 			    condiciones[4][cast]++;
 	   			for (int j = i + 1; j < n; j++){
 	   				condiciones[4][cast]++;
-					if (array[min] > array[j]) min = j;
+					if (array[min] > array[j]) {
+						cambios[4][cast]++;
+						min = j;
+					}
 				}
+				cambios[4][cast]++;
 	   			int aux = array[i];
 	   			array[i] = array[min];
 	   			array[min] = aux;
@@ -278,11 +320,14 @@ class Benchmark {
 			int aux;
 			condiciones[5][cast]++;
 			for (int i = 0; i < n; i++) {
+				cambios[5][cast]++;
 	 		    aux = array[i];
 	 		    condiciones[5][cast]++;
 	    		for (i; i > 0 && array[i-1] > aux; i--) {
+	    			cambios[5][cast]++;
 	        		array[i] = array[i-1];
 	    		}
+	    		cambios[5][cast]++;
 	    		array[i] = aux;
 			}
 			return array;
@@ -296,6 +341,7 @@ class Benchmark {
 				for(int j=i+1;j<n;j++){
 					condiciones[6][cast]++;
 					if(array[j]<array[i]){
+						cambios[6][cast]++;
 						aux=array[j];
 						array[j]=array[i];
 						array[i]=aux;
