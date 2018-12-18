@@ -7,31 +7,33 @@ using namespace std;
 #include <vector>
 #include <string.h>
 
+// Constantes de tamaño de pantalla y profundidad de bits
 const int SCREEN_WIDTH = 1280;
 const int SCREEN_HEIGHT = 720;
 const int SCREEN_BPP = 32;
+// Puntuación inicial y constante de crecimiento para cada nivel
 const float AUMENTO_PUNTUACION = 0.5;
 float PUNTUACION_PARA_PASAR_DE_NIVEL = 2500;
 
-SDL_Event event;
-SDL_Surface *recjugador = NULL;
-SDL_Surface *screen = NULL;
-SDL_Surface *m0 = NULL;
+SDL_Event event; // Evento para múltiples usos
+SDL_Surface *recjugador = NULL; // Carga de imágenes que se usarán a lo largo del juego
+SDL_Surface *screen = NULL; // Pantalla
+SDL_Surface *m0 = NULL; // Menú
 SDL_Surface *m1 = NULL;
 SDL_Surface *m2 = NULL;
 SDL_Surface *m3 = NULL;
-vector <SDL_Surface *> mundos;
-SDL_Surface *destello = NULL;
-SDL_Surface *tablero_img = NULL;
-SDL_Surface *puntos = NULL;
-SDL_Surface *status = NULL;
-SDL_Surface *record = NULL;
-SDL_Surface *ganador_con_record = NULL;
+vector <SDL_Surface *> mundos; // Mundos disponibles
+SDL_Surface *destello = NULL; // Selección de gema
+SDL_Surface *tablero_img = NULL; // Tablero
+SDL_Surface *status = NULL; // Estátus del jugador
+SDL_Surface *record = NULL; // Imagen de récords
+SDL_Surface *ganador_con_record = NULL; // Mensajes de ganador
 SDL_Surface *ganador = NULL;
-vector <vector<SDL_Surface *>> gemas;
-SDL_Surface *pos_blanca = NULL;
-SDL_Surface *message = NULL;
-SDL_Surface *nombre_jugador = NULL;
+vector <vector<SDL_Surface *>> gemas; // Matriz de gemas
+SDL_Surface *pos_blanca = NULL; // Posición blanca del tablero
+SDL_Surface *message = NULL; // Comodín para albergar texto
+SDL_Surface *nombre_jugador = NULL; // Auxiliar para nicknames
+// Fuentes y colores para fuentes
 TTF_Font *font = NULL;
 TTF_Font *font_big = NULL;
 TTF_Font *status_font = NULL;
@@ -45,6 +47,7 @@ Mix_Music *music = NULL;
 Mix_Chunk *explosion = NULL;
 Mix_Chunk *lvlup = NULL;
 
+// Función que nos sirve para cargar imágenes con transparencias
 SDL_Surface *load_image( std::string filename ) {
 	SDL_Surface* loadedImage = NULL;
 	SDL_Surface* optimizedImage = NULL;
@@ -59,6 +62,7 @@ SDL_Surface *load_image( std::string filename ) {
 	return optimizedImage;
 }
 
+
 bool load_files() {
 	SDL_Surface *aux = NULL;
 	vector <SDL_Surface *> vec_aux;
@@ -66,6 +70,7 @@ bool load_files() {
 	// Cargamos los audios
 	music = Mix_LoadMUS( "sonidos/soundtrack.wav" );
     explosion = Mix_LoadWAV( "sonidos/explosion.wav" );
+    // Cargamos las imágenes
     lvlup = Mix_LoadWAV( "sonidos/lvlup.wav" );
 	m0 = load_image( "menu/menu_0.bmp" );
 	m1 = load_image( "menu/menu_1.bmp" );
@@ -79,9 +84,12 @@ bool load_files() {
 	pos_blanca = load_image("gemas/blanco.png");
 	ganador = load_image("ganador.png");
 	ganador_con_record = load_image("ganador_record.png");
+	// Cargamos las fuentes
 	font = TTF_OpenFont( "fuente.ttf", 20);
 	status_font = TTF_OpenFont( "status2.ttf", 30);
 	font_big = TTF_OpenFont( "fuente.ttf", 48);
+	// Cargamos las gemas, cada fila de la matriz corresponde a una gema
+	// Cada posición de la fila corresponde a una variante de la gema
 	for(int i=1; i<8; i++){
 		for(int j=1; j<5; j++){
 			gema_nombre = "gemas/gema_"+to_string(i)+"_t"+to_string(j)+".png";
@@ -93,6 +101,7 @@ bool load_files() {
 		gemas.push_back(vec_aux);
 		vec_aux.clear();
 	}
+	// Armamos el conjunto de mundos disponibles
 	for(int i=1; i<=5; i++){
 		gema_nombre = "mundos/world-"+to_string(i)+".jpg";
 		aux = load_image( gema_nombre );
@@ -103,6 +112,8 @@ bool load_files() {
 	return true;
 }
 
+// Función que nos permite aplicar una imagen en cierta posición de pixeles
+// Sobre una superficie válida.
 void apply_surface( int x, int y, SDL_Surface* source, SDL_Surface* destination, SDL_Rect* clip = NULL ) {
 	SDL_Rect offset;
 	offset.x = x;
@@ -110,6 +121,7 @@ void apply_surface( int x, int y, SDL_Surface* source, SDL_Surface* destination,
 	SDL_BlitSurface( source, clip, destination, &offset );
 }
 
+// Función que inicializa texto, imágen y sonido.
 bool init() {
 	if( SDL_Init( SDL_INIT_EVERYTHING ) == -1 ) return false;
 	screen = SDL_SetVideoMode( SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_BPP, SDL_SWSURFACE );
@@ -122,6 +134,7 @@ bool init() {
 	return true;
 }
 
+// Función que imprime el rectángulo de progreso para pasar de nivel
 void imprimir_rectangulo (SDL_Surface *screen, SDL_Color color, int prof) {
 	float calculo = (int)(((float)391 / PUNTUACION_PARA_PASAR_DE_NIVEL)*prof);	
 	SDL_Rect rect = {1111, 229+(391-calculo), 40, calculo};
@@ -130,9 +143,8 @@ void imprimir_rectangulo (SDL_Surface *screen, SDL_Color color, int prof) {
 	SDL_UpdateRect(screen, rect.x, rect.y, rect.w, rect.h);
 }
 
+// Limpia la memoria usada cada vez que finaliza el juego.
 void clean_up() {
-//	SDL_FreeSurface( background );
-//	SDL_FreeSurface( message );
 	TTF_CloseFont( font );
 	TTF_Quit();
 	SDL_Quit();

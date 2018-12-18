@@ -441,6 +441,10 @@ class Tablero{
 					tab[posy][posx] = tab[posy][posx-1];
 					tab[posy][posx-1] = aux;
 				}
+				// Una vez teniendo el intercambio de gemas, verificamos que
+				// exista una combinación válida que nos permita ganar puntos
+				// Si no existe simplemente regresamos las gemas a su 
+				// posición original.
 				if(!Check_Est() && !Chek_Comb()){
 					Gema aux = tab[posy][posx];
 					if(sentido == 1 and posy > 0){
@@ -472,15 +476,20 @@ class Tablero{
 				}
 			}
 		}
+		// Función que checa si el usuario pasará de nivel
 		void check_lvl_change () {
+			// Obtenemos el id del nivel actual para los fondos
 			int id = (this->Player->nivel-1)%5;
+			// Obtenemos lo que es el mundo actual y el fondo del mundo siguiente
 			SDL_Surface *ant = mundos[id];
 			SDL_Surface *sig = mundos[(id+1)%5];
+			// Si el usuario ha sobrepasado la puntuación mínima para pasar de nivel
 			if(this->Player->puntuacion > PUNTUACION_PARA_PASAR_DE_NIVEL){
-				Mix_PlayChannel( -1, lvlup, 0 );
-				++(this->Player->nivel);
-				PUNTUACION_PARA_PASAR_DE_NIVEL*=(AUMENTO_PUNTUACION+1);
-				this->Change_Tab();
+				Mix_PlayChannel( -1, lvlup, 0 ); // Reproducimos sonido de nivel
+				++(this->Player->nivel); // Aumentamos el nivel del usuario
+				PUNTUACION_PARA_PASAR_DE_NIVEL*=(AUMENTO_PUNTUACION+1); // En base a la constante de porcentaje de nivel, aumentamos la puntuación
+				this->Change_Tab(); // Revolvemos las fichas del tablero
+				// Hacemos la animación píxel por píxel del intercambio de fondos.
 				for(int i=1, j=-1280; i<=1280; i+=5, j+=5){
 					apply_surface(i, 0, ant, screen);
 					apply_surface(j, 0, sig, screen);
@@ -590,7 +599,7 @@ class Tablero{
 				}
 			}
 			rewind(archivo);
-			// Escribimos los 10 records al archivo para que se guarden.
+			// Escribimos los 20 records al archivo para que se guarden.
 			for(int i=0; i<20; i++)
 				fwrite(&records[i], sizeof(Trecord), 1, archivo);
 			// Felicitamos al usuario. En caso de existir récord se aplica otra imagen.
@@ -611,53 +620,64 @@ class Tablero{
 		friend void Show_Records();
 };
 
+// Clase que nos permite la administración del menú
 class menu {
 	private:
-		SDL_Event event;
+		SDL_Event event; // Evento que manejará los movimientos del ratón
 	public:
 		menu() {}
 		~menu() {}
 		int disp_menu() {
+			// Booleano que determinará la salida
 			bool quit = false;
 			int acc = 3;
+			// Aplicamos el menú por defecto
 			apply_surface(0, 0, m0, screen);
 			SDL_Flip(screen);
+			// Mientras la acción sea diferente a cualquiera de las 3 opciones
 			while( acc!=0 and acc!=1 and acc!=2 ) {
+				// Reproducimos música
 				if( !Mix_PlayingMusic() ) Mix_PlayMusic( music, -1 );
 				if( SDL_PollEvent( &event ) ) {
-					acc = handle_events();
+					acc = handle_events(); // Llamamos la función que maneja los eventos
 				}
 			}
 			return acc;
 		}
 		int handle_events() {
+			// Variables que toman las coordenadas del ratón
 			int x = 0, y = 0, acc=3;
-			if( event.type == SDL_MOUSEMOTION ) {
+			if( event.type == SDL_MOUSEMOTION ) { // Si el ratón es movido...
+				// Obtenemos las coordenadas
 				x = event.motion.x;
 				y = event.motion.y;
+				// SI está dentro de los rangos
 				if(y>=300 and y<=550 and x>=420 and x<=820)
-					apply_surface(0, 0, m1, screen);
+					apply_surface(0, 0, m1, screen); // Iluminamos la sección de jugar
 				else if(y>=330 and y<=400 and x>=0 and x<=320)
-					apply_surface(0, 0, m2, screen);
+					apply_surface(0, 0, m2, screen); // Iluminamos la sección de récords
 				else if(y>=330 and y<=400 and x>=960 and x<=1280)
-					apply_surface(0, 0, m3, screen);
+					apply_surface(0, 0, m3, screen); // Iluminamos la sección de salir
 				else
-					apply_surface(0, 0, m0, screen);
+					apply_surface(0, 0, m0, screen); // Si no, aplicamos la imágen base del menú.
 				SDL_Flip(screen);
 			}
+			// Si el usuario ha dado click
 			if( event.type == SDL_MOUSEBUTTONDOWN ) {
-				if( event.button.button == SDL_BUTTON_LEFT ) {
+				if( event.button.button == SDL_BUTTON_LEFT ) { // Si el click ha sido con botón izquierdo
+					// Obtenemos las coordenadas x y y del mouse
 					x = event.button.x;
 					y = event.button.y;
+					// Si está dentro de los rangos seleccionamos una de las acciones disponibles
 					if(y>=300 and y<=550 and x>=420 and x<=820)
-						acc = 0;
+						acc = 0; // Jugar
 					else if(y>=330 and y<=400 and x>=0 and x<=320)
-						acc = 1;
+						acc = 1; // Récords
 					else if(y>=330 and y<=400 and x>=960 and x<=1280)
-						acc = 2;
+						acc = 2; // Y salir
 				}
 			}
-			return acc;
+			return acc; // Retornamos la acción
 		}
 };
 
