@@ -3,6 +3,7 @@ using namespace std;
 #include <SDL/SDL.h>
 #include <SDL/SDL_image.h>
 #include <SDL/SDL_ttf.h>
+#include <SDL/SDL_mixer.h>
 #include <vector>
 #include <string.h>
 
@@ -37,6 +38,13 @@ TTF_Font *status_font = NULL;
 SDL_Color white = {255, 255, 255};
 SDL_Color black = {0, 0, 0};
 
+// MUSICA DEL MENU
+Mix_Music *music = NULL;
+
+// SONIDOS EXTRA
+Mix_Chunk *explosion = NULL;
+Mix_Chunk *lvlup = NULL;
+
 SDL_Surface *load_image( std::string filename ) {
 	SDL_Surface* loadedImage = NULL;
 	SDL_Surface* optimizedImage = NULL;
@@ -55,6 +63,10 @@ bool load_files() {
 	SDL_Surface *aux = NULL;
 	vector <SDL_Surface *> vec_aux;
 	string gema_nombre;
+	// Cargamos los audios
+	music = Mix_LoadMUS( "sonidos/soundtrack.wav" );
+    explosion = Mix_LoadWAV( "sonidos/explosion.wav" );
+    lvlup = Mix_LoadWAV( "sonidos/lvlup.wav" );
 	m0 = load_image( "menu/menu_0.bmp" );
 	m1 = load_image( "menu/menu_1.bmp" );
 	m2 = load_image( "menu/menu_2.bmp" );
@@ -101,6 +113,9 @@ void apply_surface( int x, int y, SDL_Surface* source, SDL_Surface* destination,
 bool init() {
 	if( SDL_Init( SDL_INIT_EVERYTHING ) == -1 ) return false;
 	screen = SDL_SetVideoMode( SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_BPP, SDL_SWSURFACE );
+	if( Mix_OpenAudio( 22050, MIX_DEFAULT_FORMAT, 2, 4096 ) == -1 ){
+        return false;
+    }
 	if( screen == NULL ) return false;
 	if( TTF_Init() == -1 ) return false;
 	SDL_WM_SetCaption( "Proyecto ED", NULL );

@@ -127,6 +127,7 @@ class Tablero{
 							//guarda el color de la gema de interseccion aumenta la puntuacion llama a los poderes
 							//de las tres primeras gemas y destruye estas luego regresa el color de la gema de interseccion
 							//y cambia su tipo a 2 (gema estelar)
+							Mix_PlayChannel( -1, explosion, 0 );
 							int aux=tab[vy][vx].color;
 							Player->puntuacion+=300;
 							powers(tab[i][j+1],i,j+1); powers(tab[i][j+2],i,j+2); powers(tab[i][j],i,j);
@@ -142,6 +143,7 @@ class Tablero{
 						//si encuentra una T en cualquiera de los casos aumenta puntuacion, llama a los poderes
 						//cambia el tipo de la gema interseccion y destruye las demas
 						if(i+2<=7){
+							Mix_PlayChannel( -1, explosion, 0 );
 							//puede ser apuntando a la izquierda
 							if(tab[i+1][j].color!=0 && tab[i+1][j].color==tab[i+1][j+1].color && tab[i+1][j+1].color==tab[i+1][j+2].color){
 								if(j+2<=7){
@@ -155,6 +157,7 @@ class Tablero{
 							//o apuntando a la derecha
 							}else if(tab[i+1][j].color!=0 && tab[i+1][j].color==tab[i+1][j-1].color && tab[i+1][j-1].color==tab[i+1][j-2].color){
 								if(j-2>=0){
+									Mix_PlayChannel( -1, explosion, 0 );
 									Player->puntuacion+=300;
 									powers(tab[i][j],i,j); powers(tab[i+2][j],i+2,j); powers(tab[i+1][j-1],i+1,j-1); powers(tab[i+1][j-2],i+1,j-2);
 									tab[i+1][j].tipo=2;
@@ -229,6 +232,7 @@ class Tablero{
 						//Si encuentra una combinacion de gemas de manera horizontal, verifica si fue de tres
 						//cuatro o cinco gemas 
 						if(vx==3){ //si es de tres activa los poderes de la gema la detruye y aumenta puntuacion
+							Mix_PlayChannel( -1, explosion, 0 );
 							powers(tab[i][j],i,j);
 							tab[i][j].color=0;
 							Player->puntuacion+=50;
@@ -241,6 +245,7 @@ class Tablero{
 						//Realiza los mismos pasos pero ahora busca combinaciones de gemas de manera vertical
 						//busca combinacion de tres cuatro cinco auxiliandose de comb
 						if(vx==3){
+							Mix_PlayChannel( -1, explosion, 0 );
 							powers(tab[i][j],i,j);
 							tab[i][j].color=0;
 							Player->puntuacion+=50;
@@ -447,6 +452,7 @@ class Tablero{
 			SDL_Surface *ant = mundos[id];
 			SDL_Surface *sig = mundos[(id+1)%5];
 			if(this->Player->puntuacion > PUNTUACION_PARA_PASAR_DE_NIVEL){
+				Mix_PlayChannel( -1, lvlup, 0 );
 				++(this->Player->nivel);
 				PUNTUACION_PARA_PASAR_DE_NIVEL*=(AUMENTO_PUNTUACION+1);
 				this->Change_Tab();
@@ -592,6 +598,7 @@ class menu {
 			apply_surface(0, 0, m0, screen);
 			SDL_Flip(screen);
 			while( acc!=0 and acc!=1 and acc!=2 ) {
+				if( !Mix_PlayingMusic() ) Mix_PlayMusic( music, -1 );
 				if( SDL_PollEvent( &event ) ) {
 					acc = handle_events();
 				}
@@ -809,6 +816,7 @@ int main(int argc, char **argv){
 	while(1){
 		switch(m.disp_menu()){		//De acuerdo a lo que nos regrese el metodo desp_menu es lo que hara el juego
 			case 0:
+				Mix_HaltMusic();
 				juego();	//jugar
 				break;
 			case 1:
