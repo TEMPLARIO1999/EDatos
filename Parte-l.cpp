@@ -9,11 +9,8 @@ class Semilla {
 		//Nuestros vectores originales para que no se modifiquen
 		int *vectorO,*peor_casoO,*mejor_casoO;
 	public:
-		Semilla() {
-			size = 0;
-			//Permitimos al usuario elegir el tamaño de los vectores mayor que 1000(recomendado) 
-			cout << "Introduzca el tamaño del vector (mas de 1,000) -> ";
-			cin >> size;
+		Semilla(int size) {
+			this->size = size;
 			// Reservamos la memoria para cada vector.
 			vector = new int [size]; peor_caso = new int[size]; mejor_caso = new int[size];
 			vectorO = new int [size]; peor_casoO = new int[size]; mejor_casoO = new int[size];
@@ -142,7 +139,12 @@ class Benchmark {
 		//dentro de un for manda a llamar a cada metodo utilizando la funcion check_one enviandole numeros
 		//del 0 al 7 ademas de ir regenerando los vectores para que todos los metodos ordenen los mismos vectores
 		void Check_All(){
-			Semilla s;
+			int size = 0;
+			do{
+				cout << "Introduzca el tamaño del vector (mas de 1,000) -> ";
+				cin>>size;
+			} while (size<1000);
+			Semilla s(size);
 			for (int i=0;i<7;i++){
 				Check_One(s.get_vector(),s.get_mejor(),s.get_peor(),s.get_size(),i);
 				s.regenerar_vectores();
@@ -367,7 +369,15 @@ int main() {
 		cout << "\n3. Salir";
 		cout << "\n -> ";
 		cin >> op;
-		Semilla s;
+		int size = 0;
+		//Permitimos al usuario elegir el tamaño de los vectores mayor que 1000(recomendado) 
+		if(op==1) {
+			do {
+				cout << "Introduzca el tamaño del vector (mas de 1,000) -> ";
+				cin >> size;
+			} while (size < 1000);
+		} 
+		Semilla s(size);
 		switch(op){
 			case 1:
 				do {										//Menu de metodos
