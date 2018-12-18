@@ -61,16 +61,26 @@ class Tablero{
 		int get_nv () {		//Retorna el nivel del jugador
 			return this->Player->nivel;
 		}
+		// Función dedicada a la impresión de gemas en el tablero
 		void imprimir_gemas(){		
+			// Partimos del hecho de que la gema 1 se imprime en esas posiciones x y y
 			int posx = 60, posy = 120;
+			// Para imprimir el estátus del jugador
 			string auxiliar;
+			// Mientras ciclamos, una para ir en cada línea
 			for(int i=0; i<8; i++, posy+=60){
+				// Para ir en cada columna, paso de 60px, el tamaño de las gemas
 				for(int j=0; j<8; j++, posx+=60){
+					// Usamos nuestra matriz de gemas, una que identifique el color y la otra el tipo.
 					apply_surface(posx, posy, gemas[tab[i][j].color-1][tab[i][j].tipo-1], screen);
 				}
+				// Inicializamos x para iniciar en otra línea
 				posx=60;
 			}
+			// Aplicamos el tablero de status
 			apply_surface(0, 0, status, screen);
+			// No se hace más que imprimir en el tablero de estatus el nickname del jugador
+			// Su nivel, y la puntuación alcanzada para pasar al siguiente nivel.
 			message = TTF_RenderText_Solid( status_font, this->Player->alias.c_str(), black );
 			apply_surface(930, 150, message, screen);
 			auxiliar = to_string(this->Player->nivel);
@@ -365,29 +375,38 @@ class Tablero{
 				// Aplicamos cuadro en blanco al tablero, para hacer movimiento limpio.
 				apply_surface(60, 120, tablero_img, screen);
 				this->imprimir_gemas();
+				// Aplicamos una superficie en blanco para simular la animación.
 				apply_surface(posx_px, posy_px, pos_blanca, screen);
 				switch(sentido){
+					// Cada uno representa el movimiento pixel a pixel de la animación
+					// Se hace un intercambio de gemas y se aplica la superficie en blanco
+					// Esto para evitar empalmes
 					case 1:
+						// De abajo hacia arriba
 						apply_surface(posx_px, posy_px-60, pos_blanca, screen);
 						apply_surface(posx_px, posy_px-i, gemas[tab[posy][posx].color-1][tab[posy][posx].tipo-1], screen);
 						apply_surface(posx_px, posy_px-60+i, gemas[tab[posy-1][posx].color-1][tab[posy-1][posx].tipo-1], screen);
 						break;
 					case 2:
+						// De izquierda hacia la derecha
 						apply_surface(posx_px+60, posy_px, pos_blanca, screen);
 						apply_surface(posx_px+i, posy_px, gemas[tab[posy][posx].color-1][tab[posy][posx].tipo-1], screen);
 						apply_surface(posx_px+60-i, posy_px, gemas[tab[posy][posx+1].color-1][tab[posy][posx+1].tipo-1], screen);
 						break;
 					case 3:
+						// De abajo hacia arriba
 						apply_surface(posx_px, posy_px+60, pos_blanca, screen);
 						apply_surface(posx_px, posy_px+i, gemas[tab[posy][posx].color-1][tab[posy][posx].tipo-1], screen);
 						apply_surface(posx_px, posy_px+60-i, gemas[tab[posy+1][posx].color-1][tab[posy+1][posx].tipo-1], screen);
 						break;
 					case 4:
+						// De derecha a izquierda
 						apply_surface(posx_px-60, posy_px, pos_blanca, screen);
 						apply_surface(posx_px-i, posy_px, gemas[tab[posy][posx].color-1][tab[posy][posx].tipo-1], screen);
 						apply_surface(posx_px-60+i, posy_px, gemas[tab[posy][posx-1].color-1][tab[posy][posx-1].tipo-1], screen);
 						break;
 				}
+				// El intercambio de gemas se hace con un retraso de 1ms más tiempo de carga.
 				SDL_Flip(screen);
 				SDL_Delay(1);
 			}
@@ -399,19 +418,25 @@ class Tablero{
 				powers(tab[posy][posx],posy,posx);
 			}else{
 				Gema aux = tab[posy][posx];
-				// Arriba
+				// ya que tenemos identificada el sentido de movimiento de gemas, hacemos el reemplazo
+				// con la nueva posición, tenemos que verificar que 
+				// el nuevo movimiento no exceda los rangos permitidos (7 y 0), para evitar conflictos.
+				// Reemplazo cuando es un movimiento hacia arriba.
 				if(sentido == 1 and posy > 0){
 					tab[posy][posx] = tab[posy-1][posx];
 					tab[posy-1][posx] = aux;
 				}
+				// Reemplazo cuando es un movimiento a la derecha.
 				if(sentido == 2 and posx < 7){
 					tab[posy][posx] = tab[posy][posx+1];
 					tab[posy][posx+1] = aux;
 				}
+				// Reemplazo cuando es un movimiento hacia abajo.
 				if(sentido == 3 and posy < 7){
 					tab[posy][posx] = tab[posy+1][posx];
 					tab[posy+1][posx] = aux;
 				}
+				// Reemplazo cuando es un movimiento a la izquierda.
 				if(sentido == 4 and posx > 0 ){
 					tab[posy][posx] = tab[posy][posx-1];
 					tab[posy][posx-1] = aux;
