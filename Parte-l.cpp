@@ -389,10 +389,12 @@ int main() {
 					cout<<"6 -> Metodo de Inserccion"<<endl;
 					cout<<"7 -> Metodo de Burbuja"<<endl;
 					cout<<"0 -> Salir"<<endl;
-					if(cin>>op) break;						//Espera a que elija un metodo
-				}while(1);
-				if(op!=0) m.Check_One(s.get_vector(),s.get_mejor(),s.get_peor(),s.get_size(),op-1);	//Analiza el metodo seleccionado y lo imprime 
-				m.PrintOne(op-1);
+					cin >> op; //Espera a que elija un metodo
+				}while(op!=0);
+				if(op!=0){
+					m.Check_One(s.get_vector(),s.get_mejor(),s.get_peor(),s.get_size(),op-1);	//Analiza el metodo seleccionado y lo imprime 
+					m.PrintOne(op-1);
+				}
 				break;
 			case 2:
 				m.Check_All();//Analiza todos los metodos e imprime resultados
